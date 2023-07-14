@@ -9,4 +9,4 @@
 
 完成后打开<font color="green">Vulkan SDK\Bin\VKCube</font> 查看是否支持Vulkan
 
-![image-20230713161321869](C:\Users\admin\AppData\Roaming\Typora\typora-user-images\image-20230713161321869.png)
+![image-20230713204623372](E:/dev/Typora-Note/Vulkan/00_Environment.assets/image-20230713204623372.png)
