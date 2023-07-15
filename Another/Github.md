@@ -69,3 +69,29 @@ cat ~/.ssh/id_ed25519.pub
 ![image-20230713201925971](C:\Users\admin\AppData\Roaming\Typora\typora-user-images\image-20230713201925971.png)
 
 ![image-20230713201656467](C:\Users\admin\AppData\Roaming\Typora\typora-user-images\image-20230713201656467.png)
+
+## 提交项目
+
+```
+//初始化
+git init
+	git status
+
+git add .
+	git status
+	
+git commit -m "first commit"
+	git status
+	
+git branch -M main
+
+//link
+git remote add origin git@github.com:onlyyz/Vulkan_learn.git
+
+git push -u origin main
+git push --set-upstream origin main
+
+
+git commit -m "first commit"
+```
+
