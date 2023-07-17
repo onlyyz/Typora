@@ -10,7 +10,7 @@
 - 逗号运算符；
 - 关系运算符：>、>=、==、<=、< 和 !=；
 - while 循环；
-- typedef 工具；
+- typedef 工具；    类型别名工具：typedef chat byte
 - do while 循环；
 - 字符输入方法 get() ；
 - 文件尾条件；
