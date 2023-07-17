@@ -21,9 +21,17 @@
 
 重载运算符可使代码看起来更自然。
 
-要重载运算符，需使用被称为运算符函数的特殊函数形式。运算符函数的格式为：`operatorop(argument-list)`。
+要重载运算符，需使用被称为运算符函数的特殊函数形式。运算符函数的格式为：
 
-例如，`operator +()` 重载 `+` 运算符，`operator *()` 重载 `*` 运算符。`op` 必须是有效的C++运算符，不能虚构一个新的符号。例如，不能有 `operator@()` 这样的函数，因为C++中没有 `@` 运算符。然而，`operator` 函数可以重载 `[]` 运算符，因为 `[]` 是数组索引运算符。
+```CPP
+operatorop(argument-list)
+```
+
+例如，<font color="blue">operator +() 重载 + 运算符</font>，<font color="green">operator *() 重载 * 运算符</font>。
+
+`op` 必须是有效的C++运算符，不能虚构一个新的符号。
+
+例如，不能有 operator@() 这样的函数，因为C++中没有 @ 运算符。然而，<font color="red">operator[]()</font> 函数可以重载 [] 运算符，因为 [] 是数组索引运算符。
 
 ## 11.2 计算时间：一个运算符重载示例
 
@@ -110,9 +118,50 @@ void Time::Show() const
 
 但这种 sum 时间的方法看起来很傻。
 
+usetime0.cpp
+
+```CPP
+#include <iostream>
+#include <mytime0.h>
+
+int main() 
+{
+	using std::cout;
+	using std::endl;
+	
+
+Time planning;
+Time coding(2, 40);
+Time fixing(5, 55);
+Time total;
+
+cout << "Planning time = ";
+planning.Show();
+cout << endl;
+
+cout << "coding time = ";
+coding.Show();
+cout << endl;
+
+cout << "fixing time = ";
+fixing.Show();
+cout << endl;
+
+total = coding.Sum(fixing);
+cout << "coding.sum(fixing) = ";
+total.Show();
+cout << endl;
+
+return 0;
+
+}
+```
+
+
+
 ### 11.2.1 添加加法运算符
 
-将Time类转换为重载的加法运算符很容易，只要将`Sum()` 的名称改为 `operator +()` 即可。
+将Time类转换为重载的加法运算符很容易，只要将<font color="red">Sum() 的名称改为 operator +() </font>即可。
 
 ```Cpp
 // mytime1.h -- Time class before operator overloading
@@ -154,7 +203,7 @@ Time Time::operator+(const Time & t) const
 ...
 ```
 
-将该方法命令改为 `operator +()` 后，就可以使用运算符表示法：
+将该方法命令改为 <font color="red">operator +() </font>后，就可以使用运算符表示法：
 
 ```Cpp
 total = coding + fixing;
@@ -318,7 +367,7 @@ public:
 };
 #endif
 ```
-代码中对 `friend Time operator*(double m, const Time & t)` 的重载定义非常棒，是一个相当聪明的做法！它不是重新写一段代码，而是调用已重载的 `Time operator*(double n) const` 成员函数。
+代码中对<font color="red"> friend Time operator\*(double m, const Time & t)</font> 的重载定义非常棒，是一个相当聪明的做法！它不是重新写一段代码，而是调用已重载的<font color="RoyalBlue"> Time operator*(double n) const </font>成员函数。
 
 
 
