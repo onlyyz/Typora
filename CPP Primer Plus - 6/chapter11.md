@@ -398,6 +398,44 @@ operator-( )有两种不同的定义。这是可行的，因为它们的特征�
 > 因为运算符重载是通过函数来实现的，所以只要运算符函数的特征标不同，使用的运算符数 量与相应的内置C++运算符相同，就可以多次重载同一个运算符。
 
 ## 11.6 类的自动转换和强制类型转换
+
+<font color="red">其中<font color="RoyalBlue">display（class ，int）</font>表明，第一个参数是Class对象，但是接受了int参数。因此他会寻找<font color="green">class（int）</font>构造函数，如果没有找到，则会进行数值转换</font>
+
+```C++
+.h
+operator int();
+operator double();
+
+.cpp
+class::operator int() const
+{
+    return int(value + 0.5);
+}
+
+class::operator double() const
+{
+    return value;
+}
+```
+
+关闭隐式转换
+
+```C++
+class T;
+T = 19;
+首先创建一个temp class，然后逐成员去赋值，随后将temp 复制到 T
+隐式转换，自动进行
+
+close this function
+explict funtion()
+    class T;
+ 	T = 19; 	//not work
+	T = class(19);
+    T = (class)19;
+```
+
+
+
 ## 11.7 总结
 一般来说，访问私有类成员的唯一方法是使用类方法。C++使用友 元函数来避开这种限制。要让函数成为友元，需要在类声明中声明该函 数，并在声明前加上关键字friend。
 
@@ -409,6 +447,23 @@ C++扩展了对运算符的重载，允许自定义特殊的运算符函数，�
 
 然而，如果类包含这样的方法，它返回需要显示的数据成员的值， 则可以使用这些方法，无需在`operator<<()`中直接访问这些成员。在这种情况下，函数不必（也不应当）是友元。
 
-C++允许指定在类和基本类型之间进行转换的方式。首先，任何接 受唯一一个参数的构造函数都可被用作转换函数，将类型与该参数相同 的值转换为类。如果将类型与该参数相同的值赋给对象，则C++将自动调用该构造函数。
+C++允许指定在类和基本类型之间进行转换的方式。首先，任何<font color="red">接受唯一一个参数的构造函数都可被用作转换函数</font>，将类型与该参数相同 的值转换为类。如果将类型与该参数相同的值赋给对象，则C++将自动调用该构造函数。
 
-要将类对象转换为其他类型，必须定义转换函数，指出如何进行这种转换。转换函数必须是成员函数。
+但是<font color="RoyalBlue">explicit</font>，会强制只能使用显式转换
+
+```C++
+class T;
+T = 19;
+首先创建一个temp class，然后逐成员去赋值，随后将temp 复制到 T
+隐式转换，自动进行
+
+close this function
+explict funtion()
+    class T;
+ 	T = 19; 	//not work
+	T = class(19);
+    T = (class)19;
+```
+
+要将类对象转换为其他类型，必须定义转换函数，指出如何进行这种转换。转换函数必须是成员函数。<font color="blue">转换函数没有返回类型，没有参数</font>，但是会返回转换后的值
+
