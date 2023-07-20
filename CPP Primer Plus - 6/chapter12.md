@@ -42,7 +42,11 @@ public:
 
 对这个声明，需要注意的有两点。首先，它使用char指针（而不是 char数组）来表示姓名。这意味着类声明没有为字符串本身分配存储空 间，而是在构造函数中使用new来为字符串分配空间。这避免了在类声 明中预先定义字符串的长度。
 
-其次，将num_strings成员声明为静态存储类。静态类成员有一个特点：无论创建了多少对象，程序都只创建一个静态类变量副本。也就是说，`StringBad` 类的所有对象共享同一个 `num_strings`。假设创建了10个 `StringBad` 对象，将有10个 `str` 成员和10个 `len` 成员，但只有一个共享的 `num_strings` 成员（参见图12.1）。
+其次，将num_strings成员声明为静态存储类。
+
+<font color="red">静态类成员有一个特点：无论创建了多少对象，程序都只创建一个静态类变量副本</font>。
+
+也就是说，<font color="RoyalBlue">StringBad </font>类的所有对象共享同一个<font color="blue">num_strings</font>。假设创建了10个 StringBad 对象，将有10个 str 成员和10个 len 成员，但只有一个共享的 num_strings 成员（参见图12.1）。
 
 ![image-20210812100941808](https://static.fungenomics.com/images/2021/08/image-20210812100941808.png)
 
@@ -93,7 +97,7 @@ std::ostream & operator<<(std::ostream & os, const StringBad & st)
 }
 ```
 
-`int StringBad::num_strings = 0;` 这条语句将静态成员 `num_strings` 的值初始化为零。注意：**不能在类声明中初始化静态成员变量，这是因为类声明中只描述如何分配内存，但并不分配内存**。
+`int StringBad::num_strings = 0;` 这条语句将静态成员 `num_strings` 的值初始化为零。注意：<font color="red">**不能在类声明中初始化静态成员变量，这是因为类声明中只描述如何分配内存，但并不分配内存**</font>。
 
 可以在类声明之外使用单独的语句来进行初始化，这是因为静态类成员是单独存储的，而不是对象的组成部分。
 
@@ -101,25 +105,119 @@ std::ostream & operator<<(std::ostream & os, const StringBad & st)
 
 上述代码中，`strlen()`返回字符串长度，但不包括末尾的空字符，因此构造函数将`len`加1，使分配的内存能够存储包含空字符的字符串。
 
+<font color="blue">字符串不保存在对象中，它保存在堆内存里</font>，对象仅仅保存了去哪里查找字符串的信息
+
+
+
 删除对象可以释放对象本身占用的内存，但并不能自动释放属于对象成员的指针指向的内存。因此，必须使用析构函数。在析构函数中使用delete语句可确保对象过期 时，由构造函数使用new分配的内存被释放。
 
 > 在构造函数中使用 `new` 来分配内存时，必须在相应的析构函数中使用 `delete` 来释放内存。如果 使用 `new[]`（包括中括号）来分配内存，则应使用`delete[]`（包括中括号）来释放内存。
 
 `StringBad`的第一个版本有许多故意留下的缺陷，是一个很糟糕的类（找到该类的错误之处，甚至可以作为一道困难的编程题），这些缺陷使得输出是不确定的。例如，有些 编译器无法编译它。虽然输出的具体内容有所差别，但基本问题和解决方法（稍后将介绍） 是相同的。
 
-程序输出结果：
 
-![image-20210812111740343](https://static.fungenomics.com/images/2021/08/image-20210812111740343.png)
 
-`callme2()` 按值（而不是按引用）传递 `headline2`，结果表明这是一个严重的问题。
+```C++
+#include <iostream>
+#include "strngbad.h"
 
-首先，将 `headline2` 作为函数参数来传递从而**导致析构函数被调用**。这是因为函数的参数  `sb` 是一个临时变量，当函数调用结束后会释放这个临时变量，从而导致析构函数被调用，糟糕的源头在于析构函数中恰巧就释放了字符串。 其次，虽然按值传递可以防止原始参数被修改，但实际上函数已使原始 字符串无法识别，导致显示一些非标准字符（显示的文本取决于内存中 包含的内容）。
+using std::cout;
 
-因为自动存储对象被删除的顺序与创建顺序相反，所以最先删除的 3个对象是`knots`、`sailor`和`sport`。删除`knots`和`sailor`时是正常的，但在删 除`sport`时，`Dollars`变成了`Doll8`(或其他)。对于`sport`，程序只使用它来初始化 `sailor`，但这种操作修改了 `sports`（这又可以做一道题）。
+void callme1(StringBad&);
+void callme2(StringBad);
 
-具体而言，程序中 `Stringbad sailor = sports;` 这个语句既不是调用默认构造函数也不是调用参数为 `const char*` 的构造函数，而是等价于 `StringBad sailor=StringBad(sports);` ，又因为`sports`的类型为`StringBad`，因此与之相应的构造函数原型应该是 `StringBad(const String &);`，**但这个构造函数在`StringBad`类中没有显式声明更没有定义。这时当我们使用一个对象来初始化另一个对象时，编译器将自动生成上述构造函数（称为复制构造函数，因为它创建对象的一个副本）**。但自动生成的复制构造函数不知道需要更新静态变量`num_string`，因此会将计数方案搞乱（这就是复制对象带来的问题）。实际上，这个例子说明的所有问题都是由编译器自动生成的成员函数引起的。
+int main() {
+	using std::endl;
+	{
+		cout << "Starting an inner block.\n";
 
-最后被删除的两个对象（`headline2`和 `headline1`）已经无法识别。
+​	StringBad headline1("Celery Stalks at Midnight");
+​	StringBad headline2("Lettuce Prey");
+​	StringBad sports("Spinach Leaves Bowl for Dollars");
+
+​	cout << "headline1 : " << headline1 << endl;
+​	cout << "headline2 : " << headline2 << endl;
+
+​	cout << "sports : " << sports << endl;
+
+​	callme1(headline1);
+​	cout << "headline1 : " << headline1 << endl;
+
+​	callme2(headline2);
+​	cout << "headline2 : " << headline2 << endl;
+
+​	cout << "Initialize one object to another : \n";
+
+​	StringBad sailor = sports;
+​	cout << "sailor : " << sailor << endl;
+
+​	cout << "assign one object to  another : \n";
+        
+​	StringBad knot;
+​	knot  = headline1;
+​	cout << "knot : " << knot << endl;
+​	cout << "Exiting the block. \n";
+}
+cout << "End of main()\n";
+
+return 0;
+
+}
+
+//refer to
+void callme1(StringBad& rsb)
+{
+	cout << "String passed by reference:\n";
+	cout << " \"" << rsb << "\"\n";
+}
+
+//value to
+void callme2(StringBad sb)
+{
+	cout << "String passed by Value:\n";
+	cout << " \"" << sb << "\"\n";
+}
+```
+
+<font color="red">callme2() 按值（而不是按引用）传递 headline2</font>，结果表明这是一个严重的问题。
+
+首先，将 <font color="RoyalBlue">headline2 </font>作为函数参数来传递从而导致<font color="blue">析构函数被调用</font>。
+
+这是因为函数的参数  `sb` 是一个<font color="RoyalBlue"><font color="red">临时变量</font>，当函数调用结束后会释放这个<font color="red">临时变量</font>，从而导致<font color="blue">析构函数</font>被调用，糟糕的源头在于析构函数中恰巧就释放了字符串</font>。
+
+ 其次，虽然<font color="red">按值传递可以防止原始参数被修改</font>，但实际上函数已使原始 字符串无法识别，导致显示一些非标准字符（显示的文本取决于内存中 包含的内容）。
+
+因为自动存储对象被删除的顺序与创建顺序相反，所以最先删除的 3个对象是<font color="RoyalBlue">knots、sailor和sport</font>。删除<font color="RoyalBlue">knots和sailor</font>时是正常的
+
+但在删 除<font color="blue">sport</font>时，Dollars变成了Doll8(或其他)。对于sport，程序只使用它来初始化 sailor，但这种操作修改了 sports（这又可以做一道题）。
+
+## <font color="blue">复制构造函数</font>
+
+具体而言，程序中
+
+```C++
+ Stringbad sailor = sports; 
+```
+
+这个语句既不是调用默认构造函数也不是调用参数为<font color="red"> const char* </font>的构造函数，而是等价于 
+
+```C++
+StringBad sailor=StringBad(sports); 
+```
+
+又因为sports的类型为StringBad，因此与之相应的构造函数原型应该是 
+
+```C++
+StringBad(const String &);
+```
+
+但这个构造函数在StringBad类中没有显式声明更没有定义。
+
+这时当我们<font color="red">使用一个对象来初始化另一个对象时，编译器将自动生成上述构造函数</font>（称为<font color="blue">复制构造函数</font>，因为它创建对象的一个副本）。
+
+但<font color="RoyalBlue">自动生成的复制构造函数</font>不知道需要更新静态变量num_string，因此会将计数方案搞乱（这就是复制对象带来的问题）。实际上，这个例子说明的所有问题都是由编译器自动生成的成员函数引起的。
+
+最后被删除的两个对象（<font color="green">headline2和 headline1</font>）已经无法识别。
 
 
 ### 12.1.2 特殊成员函数
@@ -134,40 +232,70 @@ std::ostream & operator<<(std::ostream & os, const StringBad & st)
 
 更准确地说，编译器将生成上述最后三个函数的定义——如果程序 使用对象的方式要求这样做。例如，如果您将一个对象赋给另一个对 象，编译器将提供赋值运算符的定义。
 
-结果表明，StringBad类中的问题是由隐式复制构造函数和隐式赋值运算符引起的。
+结果表明，StringBad类中的问题是由<font color="red">隐式复制构造函数和隐式赋值运算符</font>引起的。
 
-1．默认构造函数
+#### 1．<font color="RoyalBlue">默认构造函数</font>
 
 默认情况下，编译器将提供一个不接受任何参数，也不执行任何操作 的构造函数（默认的默认构造函数），这是因为创建对象时总是会调用 构造函数。
 
 如果定义了构造函数，C++将不会定义默认构造函数。
 
-2．复制构造函数
+#### 2．<font color="RoyalBlue">复制构造函数</font>
 
-复制构造函数用于将一个对象复制到新创建的对象中。也就是说，**它用于初始化过程中（包括按值传递参数），而不是常规的赋值过程**（那赋值的时候怎么办？赋值靠赋值运算符=，见12.1.4），原型是：`Class_name(const Class_name &)`。它接受一个指向类对象的常量引用作为参数。
+<font color="red">复制构造函数用于将一个对象复制到新创建的对象中</font>。
 
-对于复制构造函数，需要知道两点：何时调用和有何功能。
+也就是说，它用于初始化过程中（包括按值传递参数），而不是常规的赋值过程，<font color="green">类复制构造函数的原型</font>通常如下：
 
-3．何时调用复制构造函数
+```C++
+Class_name(const Class_name &)
+```
 
-新建一个对象并将其初始化为同类现有对象时，复制构造函数都将被调用。 最常见的情况是将新对象显式地初始化为现有的对象。
+<font color="RoyalBlue">它接受一个指向<font color="green">类对象的常量引用</font>作为参数</font>。对于复制构造函数，需要知道两点：<font color="red">何时调用和有何功能</font>。
 
-![image-20210812120029250](https://static.fungenomics.com/images/2021/08/image-20210812120029250.png)
+#### 3．<font color="RoyalBlue">何时调用复制构造函数</font>
 
-其中中间的2种声明可能会使用复制构造函数直接创建metoo和 also，也可能使用复制构造函数生成一个临时对象，然后将临时对象的 内容赋给metoo和also，这取决于具体的实现。最后一种声明使用motto 初始化一个匿名对象，并将新对象的地址赋给pStringBad指针。
+<font color="red">新建一个对象并将其初始化为同类现有对象时</font>，复制构造函数都将被调用。 最常见的情况是将新对象显式地初始化为现有的对象。
 
-**每当程序生成了对象副本时，编译器都将使用复制构造函数**。具体地说，当函数按值传递对象（如程序清单12.3中的 `callme2()`）或函数返回对象时，都将使用复制构造函数。记住，**按值传递意味着创建原始变量的一个副本**。编译器生成临时对象时，也将使用复制构造函数。
+初始化为现有的对象，例如，假设motto是一个StringBad对象，下面都调用复制构造函数
 
-何时生成临时对象随编译器而异，但无论是哪种编译器，**当按值传递和返回对象时，都将调用复制构造函数**。
+```C++
+StringBad ditto(motto)		//call  StringBad(const StringBad &)
+StringBad motto = motto		//call  StringBad(const StringBad &)
+
+StringBad also = StringBad (motto)				
+
+StringBad * pStringBad  = new StringBad (motto)
+```
+
+其中中间的2种声明可能会使用复制构造函数直接创建metoo和 also，也可能使用复制构造函数生成一个临时对象，然后将临时对象的 内容赋给metoo和also，这取决于具体的实现。
+
+最后一种声明使用motto 初始化一个匿名对象，并将新对象的地址赋给pStringBad指针。
+
+<font color="red">每当程序生成了对象副本时，编译器都将使用复制构造函数</font>
+
+具体地说，当<font color="red">函数按值传递对象</font>（如程序清单12.3中的 callme2()）或<font color="red">函数返回对象</font>时，都将使用复制构造函数。
+
+记住，<font color="green">按值传递意味着创建原始变量的一个副本</font>。<font color="blue">编译器生成临时对象时，也将使用复制构造函数</font>。
+
+何时生成临时对象随编译器而异，但无论是哪种编译器，<font color="RoyalBlue">**当按值传递和返回对象时，都将调用复制构造函数**</font>。
 
 > 由于按值传递对象将调用复制构造函数，因此应该按引用传递对象。这样可以节省调用构造函数的时间以及存储新对象的空间。
 
+#### 4．<font color="RoyalBlue">默认的复制构造函数的功能</font>
 
-4．默认的复制构造函数的功能
+默认的复制构造函数逐个复制非静态成员（<font color="red">成员复制也称为浅复制</font>），复制的是成员的值。
 
-默认的复制构造函数逐个复制非静态成员（成员复制也称为浅复制），复制的是成员的值。
+```C++
+StringBad sailor = sports;
+```
 
-![image-20210812120710195](https://static.fungenomics.com/images/2021/08/image-20210812120710195.png)
+代码等效，只是因为私有成员无法访问，编译失败
+
+```C++
+StringBad sailor;
+sailor.str = sports.str;
+sailor.len = sports.len;
+```
 
 ![image-20210812120946029](https://static.fungenomics.com/images/2021/08/image-20210812120946029.png)
 
@@ -175,20 +303,60 @@ std::ostream & operator<<(std::ostream & os, const StringBad & st)
 
 ### 12.1.3  回到 Stringbad：复制构造函数的哪里出了问题 
 
-第一个异常，num_string是负值。当`callme2()`被调用时，复制构造函数被用来初始化 `callme2()` 的形参，还被用来将对象 `sailor` 初始化为对象 `sports`。默认的复 制构造函数不说明其行为，因此它不指出创建过程，也不增加计数器 num_strings的值。但析构函数更新了计数，并且在任何对象过期时都将 被调用，而不管对象是如何被创建的。程序的输出表明，析构函数的调用次数比构造函数的调用次数多2。
+第一个异常，num_string是负值。当`callme2()`被调用时，复制构造函数被用来初始化 `callme2()` 的形参，还被用来将对象 `sailor` 初始化为对象 `sports`。
 
-第二个异常之处更微妙，也更危险，其症状之一是字符串内容出现乱码。原因在于隐式复制构造函数是按值进行复制的。例如，对于程序清 单12.3，隐式复制构造函数的功能相当于：`sailor.str = sport.str;`。这里复制的并不是字符串，而是一个指向字符串的指针。也就是 说，将sailor初始化为sports后，得到的是两个指向同一个字符串的指 针。当operator <<()函数使用指针来显示字符串时，这并不会出现问 题。但当析构函数被调用时，这将引发问题。析构函数StringBad释放str 指针指向的内存，因此释放sailor的效果如下：
+<font color="red">默认的复 制构造函数不说明其行为，因此它不指出创建过程，也不增加计数器 num_strings的值</font>。但析构函数更新了计数，并且在任何对象过期时都将 被调用，而不管对象是如何被创建的。程序的输出表明，析构函数的调用次数比构造函数的调用次数多2。
 
-![image-20210812121546201](https://static.fungenomics.com/images/2021/08/image-20210812121546201.png)
+解决方法是提供一个显示复制构造函数：
 
-`sports.str`指向的内存已经被 `sailor` 的析构函数释放，这将导致不确定 的、可能有害的后果。
+```C++
+StringBad::StringBad(const char* s)
+{
+	num_strings++;
+	...
+}
+```
 
-1．定义一个显式复制构造函数以解决问题
+>   类中包含静态数据成员，并且其值在创建时发生变化，应该提供一个复制构造函数
 
-解决类设计中这种问题的方法是进行深度复制（deep copy）。也就是说，**复制构造函数应当复制字符串并将副本的地址赋给`str`成员，而不仅仅是复制字符串地址**。这样每个对象都有自己的字符串，而不是引用 另一个对象的字符串。调用析构函数时都将释放不同的字符串，而不会试图去释放已经被释放的字符串。可以这样编写`String`的复制构造函数：
+
+
+第二个异常之处更微妙，也更危险，其症状之一是字符串内容出现乱码。原因在于隐式复制构造函数是按值进行复制的。
+
+例如，对于程序清 单12.3，隐式复制构造函数的功能相当于：
+
+```C++
+sailor.str = sport.str;
+```
+
+这里复制的并不是字符串，而是一个<font color="red">指向字符串的指针</font>。
+
+也就是 说，将sailor初始化为sports后，得到的是两个指向同一个字符串的指针。当operator <<()函数使用指针来显示字符串时，这并不会出现问 题。
+
+但<font color="RoyalBlue">当析构函数被调用时，这将引发问题</font>。析构函数<font color="RoyalBlue">StringBad释放str 指针指向的内存，因此释放sailor的效果如下</font>：
+
+```C++
+delete[] sailar.str;  //delete the string that ditto.str points to
+```
+
+<font color="blue">sailar.str</font>指针指向 <font color="green">"Spinach Leaves Bowl for Dollars"</font> ，因为他被赋值为 <font color="blue">sport.str</font>。而 <font color="blue">sport.str</font>指向上述的字符串，当析构函数的delete释放字符串的占用的内存
+
+```C++
+delete[] sports.str
+```
+
+<font color="RoyalBlue">sports.str</font>指向的内存已经被 <font color="RoyalBlue">sailor </font>的析构函数释放，这将导致不确定 的、可能有害的后果。
+
+#### 1．定义一个显式复制构造函数以解决问题
+
+解决类设计中这种问题的方法是进行深度复制（deep copy）。
+
+也就是说，<font color="red">复制构造函数应当复制字符串并将<font color="RoyalBlue">副本的地址</font>赋给str成员，而不仅仅是复制字符串地址</font>。这样每个对象都有自己的字符串，而不是引用 另一个对象的字符串。
+
+调用析构函数时都将释放不同的字符串，而不会试图去释放已经被释放的字符串。可以这样编写String的复制构造函数：
 
 ```Cpp
-String::String(const char * s)     // construct String from C string
+StringBad::StringBad(const char * s)     // construct String from C string
 {
     len = std::strlen(s);          // set size
     str = new char[len + 1];       // allot storage
@@ -196,6 +364,10 @@ String::String(const char * s)     // construct String from C string
     num_strings++;                 // set object count
 }
 ```
+
+>   类中包含new 初始化的指针成员时，应该定义一个复制构造函数，以此复制指向的数据，而不是指针，这个被称之为深度复制。
+>
+>   复制的另一种形式被称之为浅复制，只复制指针的值，不会深入挖掘以此复制指针引用的<font color="red">结构</font>
 
 ![image-20210812121927440](https://static.fungenomics.com/images/2021/08/image-20210812121927440.png)
 
@@ -494,5 +666,4 @@ C++为**类构造函数**提供了一种可用来**初始化数据成员的特�
 queue(int qs): qsize(qs), items(0), front(NULL), rear(NULL) {}
 ```
 如果数据成员是**非静态const成员或引用，则必须采用这种格式**，但 可将C++11新增的类内初始化用于非静态const成员。
-
 
