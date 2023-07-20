@@ -375,34 +375,48 @@ StringBad::StringBad(const char * s)     // construct String from C string
 
 并不是程序清单12.3的所有问题都可以归咎于默认的复制构造函 数，还需要看一看默认的赋值运算符。C++允许类对象赋值，这是通过自动为类重载赋值运算符实现的。这种运算符 的原型如下：
 
-```
+```C++
 Class_name & Class_name::operator=(const Class_name &);
 ```
 
-它接受并返回一个指向类对象的引用。
+它接受并返回一个<font color="red">指向类对象的引用</font>。
 
-1．赋值运算符的功能以及何时使用它
+#### 1．<font color="RoyalBlue">赋值运算符</font>的功能以及何时使用它
 
 将已有的对象赋给另一个对象时，将使用重载的赋值运算符。初始化对象时，并不一定会使用赋值运算符，而更可能是调用复制构造函数。
 
 ```Cpp
 StringBad metoo = knot; 
 ```
-这里，`metoo` 是一个新创建的对象，被初始化为 `knot` 的值，因此使用复制构造函数。然而，正如前面指出的，实现时**也可能分两步来处理这条语句：使用复制构造函数创建一个临时对象，然后通过赋值将临时 对象的值复制到新对象中**。这就是说，初始化总是会调用复制构造函数，而使用 `=` 运算符时也可能调用赋值运算符。
+这里，metoo 是一个新创建的对象，被初始化为 knot 的值，因此使用复制构造函数。
 
-与复制构造函数相似，赋值运算符的隐式实现也对成员进行逐个复制，静态成员不受影响。
+然而，正如前面指出的，实现时也可能分两步来处理这条语句：
 
-2．赋值的问题出在哪里
+使用<font color="blue">复制构造函数创建一个临时对象</font>，然后通过赋值将临时 对象的值复制到新对象中。这就是说，初始化总是会调用复制构造函数
 
-程序清单12.3将headline1赋给knot：`knot=headline1;`。为knot调用析构函数时，正常。为Headline1调用析构函数时，异常。**出现的问题与隐式复制构造函数相同：数据受损。这也是成员复制 的问题，即导致headline1.str和knot.str指向相同的地址**。
+而使用 = 运算符时也可能调用<font color="red">赋值运算符</font>
 
-3. 解决赋值的问题
+与复制构造函数相似，赋值运算符的隐式实现也对成员进行逐个复制，<font color="red">静态成员不受影响</font>。
 
-解决办法是提供赋 值运算符（进行深度复制）定义，这与复制构造函数相似，但也有 一些差别:
+#### 2．<font color="RoyalBlue">赋值的问题</font>出在哪里
 
-- 由于目标对象可能引用了以前分配的数据，所以函数应使用`delete []` 来释放这些数据；
-- **函数应当避免将对象赋给自身；否则，给对象重新赋值前，释放内 存操作可能删除对象的内容**；
-- 函数返回一个指向调用对象的**引用**（注意是引用，不是值也不是指针）。
+程序清单12.3将headline1赋给knot：
+
+```C++
+knot=headline1;
+```
+
+为knot调用析构函数时，正常。为Headline1调用析构函数时，异常。
+
+出现的问题与隐式复制构造函数相同：<font color="red">数据受损。这也是成员复制 的问题</font>，即导致headline1.str和knot.str指向相同的地址。
+
+#### 3．<font color="RoyalBlue">解决赋值</font>的问题
+
+解决办法是提供赋值运算符（进行深度复制）定义，这与复制构造函数相似，但也有一些差别:
+
+- 由于目标对象可能引用了以前分配的数据，所以函数应使用<font color="red">delete [] </font>来释放这些数据；
+- <font color="red">函数应当避免将对象赋给自身</font>；否则，给对象重新赋值前，<font color="green">释放内存操作可能删除对象的内容</font>；
+- 函数返回一个指向调用对象的<font color="red">引用</font>（注意是引用，不是值也不是指针）。
 
 ```Cpp
 // assign a String to a String
@@ -419,7 +433,7 @@ String & String::operator=(const String & st)
 }
 ```
 
-赋值操作并不创建新的对象，因此不需要调整静态数据成员 `num_strings` 的值。
+赋值操作并不创建新的对象，因此不需要调整<font color="red">静态数据成员</font> <font color="green">num_strings </font>的值。
 
 ## 12.2 改进后的新String类
 
@@ -448,7 +462,24 @@ String::~String()                     // necessary destructor
 ```
 
 对 `operator>` 的重载很妙啊，直接利用了 `operator<` 的重载结果：
-![image-20210812163721949](https://static.fungenomics.com/images/2021/08/image-20210812163721949.png)
+
+```C++
+bool operator<(const String &st1 ,const String & str2)
+{
+    return (std::strcmp(str1.str, str2.str) < 0);
+}
+
+bool operator>(const String &st1 ,const String & str2)
+{
+    return str1 > str2;
+}
+
+bool operator==(const String &st1 ,const String & str2)
+{
+    return (std::strcmp(str1.str, str2.str) == 0);
+}
+
+```
 
 
 
@@ -476,7 +507,16 @@ const char & String::operator[](int i) const
 
 > 重载要注意同时考虑对const 和非 const 变量进行。
 
-![image-20210812165647776](https://static.fungenomics.com/images/2021/08/image-20210812165647776.png)
+```C++
+string text("Once upon a time ");
+
+const String answer("Futilex");
+cout<<text[1];
+cout<<anser[1];
+
+cin>> text[1];
+cin>> anser[1];
+```
 
 也可以修改内容：
 
@@ -487,17 +527,271 @@ means[0] = 'r';   // 这一句相当于 means.str[0] = 'r', 但 str 是私有成
 
 ### 12.2.4 静态类成员函数
 
-首先，不能通过对象调用静态成员函数；实际上，静态成员函数甚 至不能使用this指针。
+首先，不能通过对象调用静态成员函数；实际上，<font color="red">静态成员函数甚 至不能使用this指针</font>。
 
 其次，由于静态成员函数不与特定的对象相关联，因此只能使用静 态数据成员。
 
-![image-20210812170316128](https://static.fungenomics.com/images/2021/08/image-20210812170316128.png)
+```C++
+static int HowMany() {return num_string;}
+//调用
+int count = String::HowMany();
+```
+
+
 
 ### 12.2.5 进一步重载赋值运算符
 
-![image-20210812170559987](https://static.fungenomics.com/images/2021/08/image-20210812170559987.png)
+为提高处理效率，最简单的方法是重载赋值运算符．使之能够直接使用常规字符串，这样就不用创建和删除临时对象了。下面是一种可能的实现:
 
-重载>>运算符提供了一种将键盘输入行读入到String对象中的简单 方法。它假定输入的字符数不多于String::CINLIM的字符数，并丢弃多 余的字符。在if条件下，如果由于某种原因（如到达文件尾或`get(char *, int)` 读取的是一个空行）导致输入失败，istream对象的值将置为 false。
+```C++
+string & String ::operator = (const char * s)
+{
+	delete [] str;
+    len = std::strlen(s);
+    str = new char[len + 1];
+    std::strcpy(str, s);
+    return *this;
+}
+```
+
+一般说来，必须释放str指向的内存、并为新字符串分配足够的内存。
+
+重载>>运算符提供了一种将键盘输入行读入到String对象中的简单 方法。
+
+它假定输入的字符数不多于<font color="green">String::CINLIM</font>的字符数，并丢弃多 余的字符。在if条件下，如果由于某种原因（如到达文件尾或`get(char *, int)` 读取的是一个空行）导致输入失败，istream对象的值将置为 false。
+
+```C++
+// string1.h -- fixed and augmented string class definition
+
+#ifndef STRING1_H_
+#define STRING1_H_
+#include <iostream>
+using std::ostream;
+using std::istream;
+
+class String
+{
+private:
+	char* str;             // pointer to string
+	int len;                // length of string
+	static int num_strings; // number of objects
+	static const int CINLIM = 80;  // cin input limit
+public:
+	// constructors and other methods
+	String(const char* s); // constructor
+	String();               // default constructor
+	String(const String&); // copy constructor
+	~String();              // destructor
+	int length() const { return len; }
+	// overloaded operator methods    
+	String& operator=(const String&);
+	String& operator=(const char*);
+	char& operator[](int i);
+	const char& operator[](int i) const;
+	// overloaded operator friends
+	friend bool operator<(const String& st, const String& st2);
+	friend bool operator>(const String& st1, const String& st2);
+	friend bool operator==(const String& st, const String& st2);
+	friend ostream& operator<<(ostream& os, const String& st);
+	friend istream& operator>>(istream& is, String& st);
+	// static function
+	static int HowMany();
+};
+#endif
+```
+
+
+
+```C++
+// string1.cpp -- String class methods
+#include <cstring>                 // string.h for some
+#include "string1.h"               // includes <iostream>
+using std::cin;
+using std::cout;
+
+// initializing static class member
+
+int String::num_strings = 0;
+
+// static method
+int String::HowMany()
+{
+	return num_strings;
+}
+
+// class methods
+String::String(const char* s)     // construct String from C string
+{
+	len = std::strlen(s);          // set size
+	str = new char[len + 1];       // allot storage
+	std::strcpy(str, s);           // initialize pointer
+	num_strings++;                 // set object count
+}
+
+String::String()                   // default constructor
+{
+	len = 4;
+	str = new char[1];
+	str[0] = '\0';                 // default string
+	num_strings++;
+}
+
+String::String(const String& st)
+{
+	num_strings++;             // handle static member update
+	len = st.len;              // same length
+	str = new char[len + 1];  // allot space
+	std::strcpy(str, st.str);  // copy string to new location
+}
+
+String::~String()                     // necessary destructor
+{
+	--num_strings;                    // required
+	delete[] str;                    // required
+}
+
+// overloaded operator methods    
+
+// assign a String to a String
+String& String::operator=(const String& st)
+{
+	if (this == &st)
+		return *this;
+	delete[] str;
+	len = st.len;
+	str = new char[len + 1];
+	std::strcpy(str, st.str);
+	return *this;
+}
+
+// assign a C string to a String
+String& String::operator=(const char* s)
+{
+	delete[] str;
+	len = std::strlen(s);
+	str = new char[len + 1];
+	std::strcpy(str, s);
+	return *this;
+}
+
+// read-write char access for non-const String
+char& String::operator[](int i)
+{
+	return str[i];
+}
+
+// read-only char access for const String
+const char& String::operator[](int i) const
+{
+	return str[i];
+}
+
+// overloaded operator friends
+
+bool operator<(const String& st1, const String& st2)
+{
+	return (std::strcmp(st1.str, st2.str) < 0);
+}
+
+bool operator>(const String& st1, const String& st2)
+{
+	return st2 < st1;
+}
+
+bool operator==(const String& st1, const String& st2)
+{
+	return (std::strcmp(st1.str, st2.str) == 0);
+}
+
+// simple String output
+ostream& operator<<(ostream& os, const String& st)
+{
+	os << st.str;
+	return os;
+}
+
+// quick and dirty String input
+istream& operator>>(istream& is, String& st)
+{
+	char temp[String::CINLIM];
+	is.get(temp, String::CINLIM);
+	if (is)
+		st = temp;
+	while (is && is.get() != '\n')
+		continue;
+	return is;
+}
+```
+
+
+
+```C++
+// sayings1.cpp -- using expanded String class
+// compile with string1.cpp
+#include <iostream>
+#include "string1.h" 
+const int ArSize = 10;
+const int MaxLen = 81;
+int main()
+{
+    using std::cout;
+    using std::cin;
+    using std::endl;
+    String name;
+    cout << "Hi, what's your name?\n>> ";
+    cin >> name;
+
+cout << name << ", please enter up to " << ArSize
+    << " short sayings <empty line to quit>:\n";
+String sayings[ArSize];     // array of objects
+char temp[MaxLen];          // temporary string storage
+int i;
+for (i = 0; i < ArSize; i++)
+{
+    cout << i + 1 << ": ";
+    cin.get(temp, MaxLen);
+    while (cin && cin.get() != '\n')
+        continue;
+    if (!cin || temp[0] == '\0')    // empty line?
+        break;              // i not incremented
+    else
+        sayings[i] = temp;  // overloaded assignment
+}
+int total = i;              // total # of lines read
+
+if (total > 0)
+{
+    cout << "Here are your sayings:\n";
+    for (i = 0; i < total; i++)
+        cout << sayings[i][0] << ": " << sayings[i] << endl;
+
+​    int shortest = 0;
+​    int first = 0;
+​    for (i = 1; i < total; i++)
+​    {
+​        if (sayings[i].length() < sayings[shortest].length())
+​            shortest = i;
+​        if (sayings[i] < sayings[first])
+​            first = i;
+​    }
+​    cout << "Shortest saying:\n" << sayings[shortest] << endl;;
+​    cout << "First alphabetically:\n" << sayings[first] << endl;
+​    cout << "This program used " << String::HowMany()
+​        << " String objects. Bye.\n";
+}
+else
+​    cout << "No input! Bye.\n";
+// keep window open 
+/*    if (!cin)
+​        cin.clear();
+​    while (cin.get() != '\n')
+​        continue; */
+return 0;
+
+}
+```
+
+
 
 
 ## 12.3 在构造函数中使用new时应注意的事项
@@ -579,9 +873,30 @@ cout << (force1 + force2 = net).magval() << endl;
 ### 12.5.2 指针和对象小结
 
 - 使用常规表示法来声明指向对象的指针；
+
+    ```C++
+    string * glamour；
+    ```
+
 - 可以将指针初始化为指向已有的对象；
+
+    ```c++
+    string * glamour = &sayings[0];
+    ```
+
 - 可以使用new来初始化指针，这将创建一个新的对象；
+
+    ```C++
+    string * glamour = new String(sayings[choice])
+    ```
+
 - 对类使用new将调用相应的类构造函数来初始化新创建的对象。
+
+    ```C++
+    string * glamour = new String;
+    
+    string * glamour = new String("my my")
+    ```
 
 ![image-20210812221115586](https://static.fungenomics.com/images/2021/08/image-20210812221115586.png)
 
@@ -596,14 +911,25 @@ cout << (force1 + force2 = net).magval() << endl;
 
 要重新定义 << 运算符，以便将它和cout一起用来显示对象的内 容，请定义下面的友元运算符函数：
 
-![image-20210812221524669](https://static.fungenomics.com/images/2021/08/image-20210812221524669.png)
+```C++
+ostream & operator <<(ostream & os , const c_name & obj)
+{
+	os<<...;
+    return os;
+}
+```
+
+c_name 是类名。
 
 ### 12.6.2 转换函数
+
 要将单个值转换为类类型，需要创建原型如下所示的类构造函数：
 
 ```Cpp
 class_name(type_name value);
 ```
+
+<font color="RoyalBlue">class_name</font>是类名，<font color="blue">type_name</font>是要转换类型的名称
 
 要将类转换为其他类型，需要创建原型如下所示的类成员函数：
 
@@ -613,9 +939,37 @@ operator type_name();
 
 虽然该函数没有声明返回类型，但应返回所需类型的值。
 
-使用转换函数时要小心。可以在声明构造函数时使用关键字 explicit，以防止它被用于隐式转换。
+使用转换函数时要小心。可以在声明<font color="blue">构造函数时使用关键字 <font color="red">explicit</font>，以防止它被用于隐式转换。</font>
 
 ### 12.6.3 其构造函数使用new的类
+
+![img](E:/dev/Typora-Note/CPP%20Primer%20Plus%20-%206/chapter12.assets/clip_image002.gif)对于指向的内存是由new分配的所有类成员，都应在类的析构函数中对其使用delete，该运算符将释放分配的内存。
+
+![img](E:/dev/Typora-Note/CPP%20Primer%20Plus%20-%206/chapter12.assets/clip_image002.gif)如果析构函数通过对指针类成员使用delete来释放内存，则每个构造函数都应当使用new来初始化指针，或将它设置为空指针。
+
+![img](E:/dev/Typora-Note/CPP%20Primer%20Plus%20-%206/chapter12.assets/clip_image002.gif)构造函数中要么使用new []，要么使用new，而不能混用。如果构造函数使用的是new[]，则析构函数应使用delete []；如果构造函数使用的是new，则析构函数应使用delete。
+
+![img](E:/dev/Typora-Note/CPP%20Primer%20Plus%20-%206/chapter12.assets/clip_image002.gif)应定义一个分配内存（而不是将指针指向已有内存)的复制构造函数。这样程序将能够将类对象初始化为另一个类对象。这种构造函数的原型通常如下：
+
+```C++
+className （const ClassName &）
+```
+
+![img](E:/dev/Typora-Note/CPP%20Primer%20Plus%20-%206/chapter12.assets/clip_image002-1689879309224-2.gif)应定义一个重载赋值运算符的类成员函数，其函数定义如下（其中 c_pointer是c_name的类成员，类型为指向type_name的指针)。下面的示例假设使用new []来初始化变量c_pointer：
+
+```C++
+c_name &  c_name::operator = (const c_name & cn)
+{
+    if(this = & cn)
+        return *this;
+    delete [] c_pointer;
+    c_pointer = new type_name[siez];
+   	...
+    return * this;
+}
+```
+
+
 
 ## 12.7 队列模拟
 这里不记录了。
