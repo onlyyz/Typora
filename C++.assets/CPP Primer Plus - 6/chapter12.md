@@ -403,7 +403,7 @@ StringBad metoo = knot;
 程序清单12.3将headline1赋给knot：
 
 ```C++
-knot=headline1;
+knot = headline1;
 ```
 
 为knot调用析构函数时，正常。为Headline1调用析构函数时，异常。
@@ -972,29 +972,79 @@ c_name &  c_name::operator = (const c_name & cn)
 
 
 ## 12.7 队列模拟
-这里不记录了。
+<font color="RoyalBlue">const 为常量，可以初始化，但是不能赋值</font>，构造函数先创建对象，随后进入<font color="red">{ }</font>部分。即先分配成员变量内存，随后进入<font color="red">{ }</font>部分进行常规的赋值方式
 
-对于`const`数据成员，必须在执行到构造函数体之前，即创建对象时进行初始化。C++提供了一种特殊的语法来完成上 述工作，它叫做成员初始化列表（member initializer list）。成员初始化 列表由逗号分隔的初始化列表组成（前面带冒号）。它位于参数列表的 右括号之后、函数体左括号之前。如果数据成员的名称为 `mdata`，并需 要将它初始化为`val`，则初始化器为`mdata(val)`。
+<font color="RoyalBlue">对于<font color="red">const数据成员</font>，必须在执行到构造函数体之前</font>，即<font color="blue">创建对象时进行初始化</font>。C++提供了一种特殊的语法来完成上述工作，它叫做成员初始化列表（member initializer list）。成员初始化 列表由逗号分隔的初始化列表组成（前面带冒号）。
 
-![image-20210814205323898](https://static.fungenomics.com/images/2021/08/image-20210814205323898.png)
+它位于参数列表的 右括号之后、函数体左括号之前。如果<font color="red">数据成员的名称为 mdata，并需要将它初始化为val</font>，<font color="blue">则初始化器为mdata(val)</font>。
 
+```CPP
+Queue::Queue(int qs) :qsize(qs)		//initialize qsize to qs
+{
+	fornt  = rear = null;
+	items = 0;
+}
+```
 
-**只有构造函数可以使用这种初始化列表语法**。如上所示，对于const 类成员，必须使用这种语法。另外，**对于被声明为引用的类成员，也必须使用这种语法**：
+通常，初值可以是<font color="RoyalBlue">常量</font>或者构造函数的参数列表中的参数，这种方法并不限于初始化常量，可以将Queue构造函数写成如下所示
 
-![image-20210814205737591](https://static.fungenomics.com/images/2021/08/image-20210814205737591.png)
+```cPP
+Queue::Queue(int qs) : qsize(qs), front (NUll)，rear (Null),item(0)
+{}
+```
 
-**这是因为引用与const数据类似，只能在被创建时进行初始化**。对于 简单数据成员（例如front和items），使用成员初始化列表和在函数体中 使用赋值没有什么区别。
+<font color="red">只有构造函数可以使用这种初始化列表语法</font>。如上所示，<font color="blue">对于const 类成员</font>，必须使用这种语法。另外，<font color="blue">对于被声明为引用的类成员</font>，也必须使用这种语法：
+
+```C++
+class Agency{...};
+Class Aent
+{
+	private:
+	Agency & belong;
+	...
+}
+
+Agent::Agent(Agency & a):belong(a)
+{
+	...		
+}
+```
+
+这是因为<font color="red">引用与const数据</font>类似，<font color="RoyalBlue">只能在被创建时进行初始化</font>。对于简单数据成员（例如front和items），使用成员初始化列表和在函数体中 使用赋值没有什么区别。
+
+```C++
+Classy::Classy(int n ,int m): men1(n),mem2(0),men3(n*m +2)
+{
+	...
+}
+```
 
 > 【注意】：
 > 这种格式只能用于构造函数；
 > 必须用这种格式来初始化非静态const数据成员；
 > 必须用这种格式来初始化引用数据成员。
 
-**不能将成员初始化列表语法用于构造函数之外的其他类方法**。
+<font color="green">不能将成员初始化列表语法用于构造函数之外的其他类方法。</font>
 
 如果我们不希望复制构造函数被调用，也不允许赋值运算，可以这样做：
 
-![image-20210814214006080](https://static.fungenomics.com/images/2021/08/image-20210814214006080.png)
+```C++
+Class Queue
+{
+	private:
+	Queue(const Queue & q) : qsize(0){}
+	Queue & operator = (const Queue & q){ return *this;}
+}
+```
+
+这样做有两个作用：
+第一，它避免了本来就自动生成的默认方法定义
+第二，因为这些方法都是私有的，所以不能被广泛使用，也就是说，如果nip和tuck 都是Queue对象 ，则编译器不会允许这么做
+
+```C++
+Queue snick（nip）
+tuck =nip；	
+```
 
 这是一种禁用方法的技巧，同时可以作为一种暂时不编写这两个函数的预防措施：与其将来面对无法预料的运行故障，不如得到一个易于跟踪的编译错误，指出这些方法是不可访问的。另外，在定义其对象不允许 被复制的类时，这种方法也很有用。
 
@@ -1002,9 +1052,28 @@ c_name &  c_name::operator = (const c_name & cn)
 
 ## 12.8 总结
 
-本章介绍了定义和使用类的许多重要方面。其中的一些方面是非常 微妙甚至很难理解的概念。
+-   **构造函数**：默认构造函数不完成任何工作，但使得能够声明数组和未初始化对象。
+-   **复制构造函数**：默认赋值构造函数使用成员赋值。
+-   **赋值运算符**：默认赋值运算法使用成员赋值。
+-   **析构函数**：默认析构函数不完成任何工作。
+-   **地址运算符**：隐式地址运算符返回调用对象的地址（即this指针的值）。
+-   如果没有定义构造函数，将提供默认构造函数。 
+-   如果没有定义复制构造函数，将提供复制构造函数。 
+-   如果没有定义赋值运算符，将提供赋值运算符。
+-   如果没有定义析构函数，将提供默认析构函数。 
+-   如果没有定义地址运算符，将提供地址运算符。
 
-在类构造函数中使用new，也可能在对象过期 时引发问题。如果对象包含成员指针，同时它指向的内存是由new分配 的，则释放用于保存对象的内存并不会自动释放对象成员指针指向的内 存。因此在类构造函数中使用new类来分配内存时，应在类析构函数中 使用delete来释放分配的内存。这样，当对象过期时，将自动释放其指 针成员指向的内存。
+
+
+在类构造函数中使用new，也可能在对象过期时引发问题。
+
+如果对象包含<font color="blue">成员指针</font>，同时它指向的<font color="RoyalBlue">内存是由new分配 </font>的，则释放用于保存对象的内存并不会自动释放对象成员<font color="red">指针指向的内存</font>。
+
+因此在类构造函数中使用new类来分配内存时，应在类析构函数中使用delete来释放分配的内存。这样，当对象过期时，将自动释放其指针成员指向的内存。
+
+```C++
+ * Pointer -> ~Class();
+```
 
 如果对象包含指向new分配的内存的指针成员，则将一个对象初始 化为另一个对象，或将一个对象赋给另一个对象时，也会出现问题。
 
@@ -1020,4 +1089,31 @@ C++为**类构造函数**提供了一种可用来**初始化数据成员的特�
 queue(int qs): qsize(qs), items(0), front(NULL), rear(NULL) {}
 ```
 如果数据成员是**非静态const成员或引用，则必须采用这种格式**，但 可将C++11新增的类内初始化用于非静态const成员。
+
+```C++
+class Golfer { 
+ private:     
+    char * fullname; 				// points to string containing golfer's name     
+    int games; 						// holds number of golf games played     
+    int * scores; 					// points to first element of array of golf scores
+ public:     
+    Golfer();     
+    Golfer(const char * name, int g= 0);     
+    Golfer(const Golfer & g);     
+    ~Golfer(); 
+};
+```
+
+
+
+```C++
+Golfer nancy;                     // 默认构造函数   
+Golfer lulu("Little Lulu");       // Golfer(const char * name, int g)   
+Golfer roy("Roy Hobbs", 12);      // Golfer(const char * name, int g)  
+Golfer* par = new Golfer;         // 默认构造函数   
+Golfer next = lulu;               // Golfer(const Golfer &g)   
+Golfer hazard = "Weed Thwacker";  // Golfer(const char * name, int g)   
+*par = nancy;                     // 默认赋值运算符   
+nancy = "Nancy Putter";           // 先调用Golfer(const char * name, int g), 再默认赋值运算符
+```
 
