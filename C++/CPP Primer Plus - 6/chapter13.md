@@ -209,6 +209,228 @@ pt->Name();
 第四点是，基类声明了一个虚析构函数。<font color="RoyalBlue">这样做是为了确保释放派生对象时，按正确的顺序调用析构函数。</font>
 
 >   程序工具对象类型而不是引用和指针类型去选择方法的版本
+>
+>   ```C++
+>   // brass.h  -- bank account classes
+>   #ifndef BRASS_H_
+>   #define BRASS_H_
+>   #include <string>
+>   // Brass Account Class
+>   class Brass
+>   {
+>   private:
+>   	std::string fullName;
+>   	long acctNum;
+>   	double balance;
+>   public:
+>   	Brass(const std::string& s = "Nullbody", long an = -1,
+>   		double bal = 0.0);
+>   	void Deposit(double amt);
+>   	virtual void Withdraw(double amt);
+>   	double Balance() const;
+>   	virtual void ViewAcct() const;
+>   	virtual ~Brass() {}
+>   };
+>   
+>   //Brass Plus Account Class
+>   class BrassPlus : public Brass
+>   {
+>   private:
+>   	double maxLoan;
+>   	double rate;
+>   	double owesBank;
+>   public:
+>   	BrassPlus(const std::string& s = "Nullbody", long an = -1,
+>   		double bal = 0.0, double ml = 500,
+>   		double r = 0.11125);
+>   	BrassPlus(const Brass& ba, double ml = 500,
+>   		double r = 0.11125);
+>   	virtual void ViewAcct()const;
+>   	virtual void Withdraw(double amt);
+>   	void ResetMax(double m) { maxLoan = m; }
+>   	void ResetRate(double r) { rate = r; };
+>   	void ResetOwes() { owesBank = 0; }
+>   };
+>   
+>   #endif
+>   ```
+>
+>   ```C++
+>   // brass.cpp -- bank account class methods
+>   #include <iostream>
+>   #include "brass.h"
+>   using std::cout;
+>   using std::endl;
+>   using std::string;
+>   
+>   // formatting stuff
+>   typedef std::ios_base::fmtflags format;
+>   typedef std::streamsize precis;
+>   format setFormat();
+>   void restore(format f, precis p);
+>   
+>   // Brass methods
+>   
+>   Brass::Brass(const string& s, long an, double bal)
+>   {
+>   	fullName = s;
+>   	acctNum = an;
+>   	balance = bal;
+>   }
+>   
+>   void Brass::Deposit(double amt)
+>   {
+>   	if (amt < 0)
+>   		cout << "Negative deposit not allowed; "
+>   		<< "deposit is cancelled.\n";
+>   	else
+>   		balance += amt;
+>   }
+>   
+>   void Brass::Withdraw(double amt)
+>   {
+>   	// set up ###.## format
+>   	format initialState = setFormat();
+>   	precis prec = cout.precision(2);
+>   
+>   if (amt < 0)
+>   	cout << "Withdrawal amount must be positive; "
+>   
+>   ​	<< "withdrawal canceled.\n";
+>   else if (amt <= balance)
+>   ​	balance -= amt;
+>   else
+>   ​	cout << "Withdrawal amount of $" << amt
+>   ​	<< " exceeds your balance.\n"
+>   ​	<< "Withdrawal canceled.\n";
+>   restore(initialState, prec);
+>   
+>   }
+>   double Brass::Balance() const
+>   {
+>   	return balance;
+>   }
+>   
+>   void Brass::ViewAcct() const
+>   {
+>   	// set up ###.## format
+>   	format initialState = setFormat();
+>   	precis prec = cout.precision(2);
+>   	cout << "Client: " << fullName << endl;
+>   	cout << "Account Number: " << acctNum << endl;
+>   	cout << "Balance: $" << balance << endl;
+>   	restore(initialState, prec); // Restore original format
+>   }
+>   
+>   // BrassPlus Methods
+>   BrassPlus::BrassPlus(const string& s, long an, double bal,
+>   	double ml, double r) : Brass(s, an, bal)
+>   {
+>   	maxLoan = ml;
+>   	owesBank = 0.0;
+>   	rate = r;
+>   }
+>   
+>   BrassPlus::BrassPlus(const Brass& ba, double ml, double r)
+>   	: Brass(ba)   // uses implicit copy constructor
+>   {
+>   	maxLoan = ml;
+>   	owesBank = 0.0;
+>   	rate = r;
+>   }
+>   
+>   // redefine how ViewAcct() works
+>   void BrassPlus::ViewAcct() const
+>   {
+>   	// set up ###.## format
+>   	format initialState = setFormat();
+>   	precis prec = cout.precision(2);
+>   
+>   Brass::ViewAcct();   // display base portion
+>   cout << "Maximum loan: $" << maxLoan << endl;
+>   cout << "Owed to bank: $" << owesBank << endl;
+>   cout.precision(3);  // ###.### format
+>   cout << "Loan Rate: " << 100 * rate << "%\n";
+>   restore(initialState, prec);
+>   
+>   }
+>   
+>   // redefine how Withdraw() works
+>   void BrassPlus::Withdraw(double amt)
+>   {
+>   	// set up ###.## format
+>   	format initialState = setFormat();
+>   	precis prec = cout.precision(2);
+>   
+>   double bal = Balance();
+>   if (amt <= bal)
+>   	Brass::Withdraw(amt);
+>   else if (amt <= bal + maxLoan - owesBank)
+>   {
+>   	double advance = amt - bal;
+>   	owesBank += advance * (1.0 + rate);
+>   	cout << "Bank advance: $" << advance << endl;
+>   	cout << "Finance charge: $" << advance * rate << endl;
+>   	Deposit(advance);
+>   	Brass::Withdraw(amt);
+>   }
+>   else
+>   	cout << "Credit limit exceeded. Transaction cancelled.\n";
+>   restore(initialState, prec);
+>   
+>   }
+>   
+>   format setFormat()
+>   {
+>   	// set up ###.## format
+>   	return cout.setf(std::ios_base::fixed,
+>   		std::ios_base::floatfield);
+>   }
+>   
+>   void restore(format f, precis p)
+>   {
+>   	cout.setf(f, std::ios_base::floatfield);
+>   	cout.precision(p);
+>   }
+>   
+>   
+>   ```
+
+<font color="RoyalBlue">usebrass1.cpp</font>
+
+>   ```C++
+>   // usebrass1.cpp -- testing bank account classes
+>   // compile with brass.cpp
+>   #include <iostream>
+>   #include "brass.h"
+>   
+>   int main()
+>   {
+>   	using std::cout;
+>   	using std::endl;
+>   
+>   Brass Piggy("Porcelot Pigg", 381299, 4000.00);
+>   BrassPlus Hoggy("Horatio Hogg", 382288, 3000.00);
+>   Piggy.ViewAcct();
+>   cout << endl;
+>   Hoggy.ViewAcct();
+>   cout << endl;
+>   cout << "Depositing $1000 into the Hogg Account:\n";
+>   Hoggy.Deposit(1000.00);
+>   cout << "New balance: $" << Hoggy.Balance() << endl;
+>   cout << "Withdrawing $4200 from the Pigg Account:\n";
+>   Piggy.Withdraw(4200.00);
+>   cout << "Pigg account balance: $" << Piggy.Balance() << endl;
+>   cout << "Withdrawing $4200 from the Hogg Account:\n";
+>   Hoggy.Withdraw(4200.00);
+>   Hoggy.ViewAcct();
+>   // std::cin.get();
+>   return 0;
+>   
+>   }
+>   ```
+>
+>   
 
 
 为何需要虚析构函数？
@@ -217,17 +439,109 @@ pt->Name();
 
 如果析构函数不是虚的，则将只调用对应于指针类型的析构函数。对于 程序清单13.10，这意味着只有Brass的析构函数被调用，即使指针指向 的是一个BrassPlus对象。如果析构函数是虚的，将调用相应对象类型的 析构函数。因此，如果指针指向的是BrassPlus对象，将调用BrassPlus的 析构函数，然后自动调用基类的析构函数。因此，使用虚析构函数可以 确保正确的析构函数序列被调用。
 
-对于程序清单13.10，这种正确的行为并不是很重要，因为析构函数没有执行任何操作。然而，如果 BrassPlus包含一个执行某些操作的析构函数，则Brass必须有一个虚析构函数，即使该析构函数不执行任何操作
+程序清单13.10
+
+>   ```C++
+>   // usebrass2.cpp -- polymorphic example
+>   // compile with brass.cpp
+>   #include <iostream>
+>   #include <string>
+>   #include "brass.h"
+>   const int CLIENTS = 4;
+>   
+>   int main()
+>   {
+>       using std::cin;
+>       using std::cout;
+>       using std::endl;
+>   
+>   Brass* p_clients[CLIENTS];
+>   std::string temp;
+>   long tempnum;
+>   double tempbal;
+>   char kind;
+>   
+>   for (int i = 0; i < CLIENTS; i++)
+>   {
+>       cout << "Enter client's name: ";
+>       getline(cin, temp);
+>       cout << "Enter client's account number: ";
+>       cin >> tempnum;
+>       cout << "Enter opening balance: $";
+>       cin >> tempbal;
+>       cout << "Enter 1 for Brass Account or "
+>           << "2 for BrassPlus Account: ";
+>       while (cin >> kind && (kind != '1' && kind != '2'))
+>           cout << "Enter either 1 or 2: ";
+>       if (kind == '1')
+>           p_clients[i] = new Brass(temp, tempnum, tempbal);
+>       else
+>       {
+>           double tmax, trate;
+>           cout << "Enter the overdraft limit: $";
+>           cin >> tmax;
+>           cout << "Enter the interest rate "
+>               << "as a decimal fraction: ";
+>           cin >> trate;
+>           p_clients[i] = new BrassPlus(temp, tempnum, tempbal,
+>               tmax, trate);
+>       }
+>       while (cin.get() != '\n')
+>           continue;
+>   }
+>   cout << endl;
+>   for (int i = 0; i < CLIENTS; i++)
+>   {
+>       p_clients[i]->ViewAcct();
+>       cout << endl;
+>   }
+>   
+>   for (int i = 0; i < CLIENTS; i++)
+>   {
+>       delete p_clients[i];  // free memory
+>   }
+>   cout << "Done.\n";
+>   /* code to keep window open
+>     if (!cin)
+>        cin.clear();
+>     while (cin.get() != '\n')
+>        continue;
+>   
+>      */
+>       return 0;
+>   }
+>   ```
+
+一个数组如果想保存不同Class对象，<font color="RoyalBlue">可以创建基类指针，使用公有继承模型</font>，这样Pointer可以指向基类也可以指向派生类。
+
+<font color="red">一个数组可以表示多种类型的对象，这就是多态性</font>
+
+
+
+对于程序清单13.10，这种正确的行为并不是很重要，因为析构函数没有执行任何操作。然而，如果 BrassPlus包含一个执行某些操作的析构函数，则Brass必须有一个虚析构函数，即使该析构函数不执行任何操作。
 
 ## 13.4 静态联编和动态联编
 
-程序调用函数时，将使用哪个可执行代码块呢？编译器负责回答这 个问题。将源代码中的函数调用解释为执行特定的函数代码块被称为函 数名联编（binding）。在编译过程中进行联 编被称为静态联编（static binding），又称为早期联编（early binding）。然而，虚函数使这项工作变得更困难。正如在程序清单 13.10所示的那样，使用哪一个函数是不能在编译时确定的，因为编译 器不知道用户将选择哪种类型的对象。所以，编译器必须生成能够在程 序运行时选择正确的虚方法的代码，这被称为动态联编（dynamic binding），又称为晚期联编（late binding）。
+程序调用函数时，将使用哪个可执行代码块呢？编译器负责回答这 个问题。将源代码中的函数调用解释为执行特定的函数代码块被称为函数名联编（binding）。
+
+在编译过程中进行联 编被称为静态联编（static binding），又称为早期联编（early binding）。然而，虚函数使这项工作变得更困难。正如在程序清单 13.10所示的那样，使用哪一个函数是不能在编译时确定的，因为编译器不知道用户将选择哪种类型的对象。
+
+所以，编译器必须生成能够在程 序运行时选择正确的虚方法的代码，这被称为动态联编（dynamic binding），又称为晚期联编（late binding）。
 
 ### 13.4.1 指针和引用类型的兼容性
 
-**将派生类引用或指针转换为基类引用或指针被称为向上强制转换 （upcasting），这使公有继承不需要进行显式类型转换**。该规则是is-a 关系的一部分。
+```C++
+BrassPlus dilly("xxx",xxx,xxx);
 
-**相反的过程——将基类指针或引用转换为派生类指针或引用——称为向下强制转换（downcasting），如果不使用显式类型转换，则向下强制转换是不允许的**。原因是is-a关系通常是不可逆的。派生类可以新增 数据成员，因此使用这些数据成员的类成员函数不能应用于基类。
+Brass * pb = &dilly;
+Brass & rb = dilly;
+```
+
+**将<font color="blue">派生类引用或指针转换为基类引用或指针</font>被称为<font color="red">向上强制转换</font> （upcasting），这使公有继承不需要进行显式类型转换**。该规则是is-a 关系的一部分。
+
+**相反的过程——将<font color="RoyalBlue">基类指针或引用转换为派生类指针或引用</font>——称为<font color="red">向下强制转换</font>（downcasting），如果不使用显式类型转换，则向下强制转换是不允许的**。原因是is-a关系通常是不可逆的。
+
+<font color="green">派生类可以新增 数据成员，因此使用这些数据成员的类成员函数不能应用于基类。</font>
 
 对于使用基类引用或指针作为参数的函数调用，将进行向上转换。
 
@@ -242,13 +556,21 @@ pt->Name();
 
 如果动态联编让您能够重新定义类方法，而静态联编在这方面很 差，为何不摒弃静态联编呢？原因有两个——效率和概念模型。
 
-首先来看效率。为使程序能够在运行阶段进行决策，必须采取一些 方法来跟踪基类指针或引用指向的对象类型，这增加了额外的处理开销 （稍后将介绍一种动态联编方法）。
+首先来看效率。为使程序能够在运行阶段进行决策，必须采取一些方法来跟踪基类指针或引用指向的对象类型，这增加了额外的处理开销 （稍后将介绍一种动态联编方法）。
 
 接下来看概念模型。在设计类时，可能包含一些不在派生类重新定 义的成员函数。例如，Brass::Balance( )函数返回账户结余，不应该重新 定义。不将该函数设置为虚函数，有两方面的好处：首先效率更高；其次，指出不要重新定义该函数。这表明，仅将那些预期将被重新定义的 方法声明为虚的。
 
 2．虚函数的工作原理
 
-编译器处理虚函数的方法是：给每个对象添加一个隐藏成 员。隐藏成员中保存了一个指向函数地址数组的指针。这种数组称为虚 函数表（virtual function table，vtbl）。虚函数表中存储了为类对象进行 声明的虚函数的地址。例如，基类对象包含一个指针，该指针指向基类 中所有虚函数的地址表。派生类对象将包含一个指向独立地址表的指 针。如果派生类提供了虚函数的新定义，该虚函数表将保存新函数的地 址；如果派生类没有重新定义虚函数，该vtbl将保存函数原始版本的地 址。如果派生类定义了新的虚函数，则该函数的地址也将被添加到vtbl 中（参见图13.5）。注意，无论类中包含的虚函数是1个还是10个，都 只需要在对象中添加1个地址成员，只是表的大小不同而已。
+编译器处理虚函数的方法是：给每个对象添加一个隐藏成 员。隐藏成员中保存了一个<font color="RoyalBlue">指向函数地址数组的指针</font>。这种数组称为<font color="red">虚函数表</font>（virtual function table，vtbl）。
+
+虚函数表中存储了为类对象进行 声明的虚函数的地址。
+
+例如，基类对象包含一个指针，该指针指向基类中所有虚函数的地址表。派生类对象将包含一个指向独立地址表的指针。
+
+如果派生类提供了虚函数的新定义，该虚函数表将保存新函数的地 址；如果派生类没有重新定义虚函数，该vtbl将保存函数原始版本的地 址。
+
+如果派生类定义了新的虚函数，则该函数的地址也将被添加到vtbl 中（参见图13.5）。注意，无论类中包含的虚函数是1个还是10个，都 只需要在对象中添加1个地址成员，只是表的大小不同而已。
 
 ![image-20210815000546665](https://static.fungenomics.com/images/2021/08/image-20210815000546665.png)
 
@@ -256,15 +578,15 @@ pt->Name();
 
 总之，使用虚函数时，在内存和执行速度方面有一定的成本，包括：
 
-- 每个对象都将增大，**增大量**为存储地址的空间；
-- 对于每个类，编译器都创建一个虚函数地址表（数组）；
-- 对于每个函数调用，都需要执行一项额外的操作，即到表中查找地址；
+- 每个对象都将增大，**增大量**为<font color="blue">存储地址的空间</font>；
+- 对于每个类，编译器都创建一个<font color="red">虚函数地址表（数组）</font>；
+- 对于每个函数调用，都需要执行一项额外的操作，即<font color="RoyalBlue">到表中查找地址</font>；
 
 ### 13.4.3 有关虚函数注意事项
 
-- 在基类方法的声明中使用关键字virtual可使该方法在基类以及所有 的派生类（包括从派生类派生出来的类）中是虚的；
-- 如果使用指向对象的引用或指针来调用虚方法，程序将使用为对象类型定义的方法，而不使用为引用或指针类型定义的方法。这称为 动态联编。这种行为非常重要，因为这样基类指针或引 用可以指向派生类对象；
-- 如果定义的类将被用作基类，则应将那些要在派生类中重新定义的 类方法声明为虚的；
+- 在基类方法的声明中使用关键字可<font color="red">virtual</font>使该方法在基类以及所有 的派生类（包括从派生类派生出来的类）中是虚的；
+- 如果使用指向对象的<font color="RoyalBlue">引用或指针</font>来调用虚方法，程序将使用为对象类型定义的方法，而不使用为引用或指针类型定义的方法。这称为 动态联编。这种行为非常重要，因为这样基类指针或引 用可以指向派生类对象；
+- 如果定义的类将被用作基类，则应将那些要在派生类中重新定义的类方法声明为虚的；
 - 构造函数不能是虚函数；
 - 析构函数应当是虚函数，除非类不用做基类。这意味着，即使基类不需要显式析构函数提供服务，也不应依赖于默认构造函数，而应提供虚析构函数，即使它不执行任何操作；
 
@@ -286,11 +608,13 @@ C++通过使用纯虚函数（pure virtual function） 提供未实现的函数�
 virtual double Area() const = 0; // a pure virtual function
 ```
 
-当类声明中包含纯虚函数时，则不能创建该类的对象。这里的理念 是，包含纯虚函数的类只用作基类。要成为真正的ABC，必须至少包含 一个纯虚函数。原型中的=0使虚函数成为纯虚函数。
+<font color="red">当类声明中包含<font color="blue">纯虚函数</font>时，则不能创建该类的对象</font>
+
+这里的理念是，包含纯虚函数的类只用作基类。要成为真正的ABC（抽象基类），必须至少包含一个纯虚函数。原型中的=0使虚函数成为纯虚函数。
 
 在原型中使用=0指出类是一个抽象基类，在类中可以不定义该函数。
 
-【ABC理念】如果要设计类继承层次，则只能将那些不会被用作基类的类设计 为具体的类。这种方法的设计更清晰，复杂程度更低。
+【ABC理念】如果要设计类继承层次，则只能将那些不会被用作基类的类设计为具体的类。这种方法的设计更清晰，复杂程度更低。
 
 可以将ABC看作是一种必须实施的接口。ABC要求具体派生类覆盖 其纯虚函数——迫使派生类遵循ABC设置的接口规则。这种模型在基于 组件的编程模式中很常见，在这种情况下，使用ABC使得组件设计人员 能够制定“接口约定”，这样确保了从ABC派生的所有组件都至少支持 ABC指定的功能。
 
@@ -336,39 +660,184 @@ public:
 编译器会自动生成一些公有成员函数——特殊成员 函数。这表明这些特殊成员函数很重要：
 
 1. 默认构造函数，要么没有参数，要么所有的参数都有默认值。如果没 有定义任何构造函数，编译器将定义默认构造函数，让我们能够创建对象；
-2. 复制构造函数，接受其所属类的对象作为参数。如果程序没有使用（显式或隐式）复制构造函数，编译器将提供原型，但不提供函数定义；否则，程序将定义一个执行成员初始化的复制构造函数；
+
+    ```C++
+    Star riel;	//
+    ```
+
+    
+
+2. 复制构造函数，接受其所属类的对象作为参数。
+
+    ```C++
+    Star(const Star &);
+    
+    //将新对象初始化为一个同类对象
+    //按值将对象传递给函数
+    //函数按值返对象
+    //编译器生成零食对象
+    ```
+
+    如果程序没有使用（显式或隐式）复制构造函数，编译器将提供原型，但不提供函数定义；否则，程序将定义一个执行成员初始化的复制构造函数；
+
 3. 赋值运算符，默认的赋值运算符用于处理同类对象之间的赋值。不要将赋值与初 始化混淆了。**如果语句创建新的对象，则使用初始化；如果语句修改已有对象的值，则是赋值**；
 
 ### 13.8.2 其他的类方法
 
 定义类时，还需要注意其他几点：
 
-1. 构造函数。构造函数不同于其他类方法，因为它创建新的对象，而其他类方法 只是被现有的对象调用。这是构造函数不被继承的原因之一。继承意味着派生类对象可以使用基类的方法，然而，**构造函数在完成其工作之前，对象并不存在**；
-2. 析构函数。一定要定义显式析构函数来释放类构造函数使用new分配的所有内 存，并完成类对象所需的任何特殊的清理工作。对于基类，即使它不需 要析构函数，也应提供一个虚析构函数；
-3. 转换。使用一个参数就可以调用的构造函数定义了从参数类型到类类型的转换。将可转换的类型传递给以类为参数的函数时，**将调用转换构造函数**。在带一个参数的构造函数原型中使用 `explicit`将禁止进行隐式转换， 但仍允许显式转换：
+<font color="blue">构造函数</font>
 
-![image-20210815165206668](https://static.fungenomics.com/images/2021/08/image-20210815165206668.png)
+构造函数不同于其他类方法，因为它创建新的对象，而其他类方法 只是被现有的对象调用。这是构造函数不被继承的原因之一。继承意味着派生类对象可以使用基类的方法，然而，**构造函数在完成其工作之前，对象并不存在**；
+
+<font color="red">方法返回的是一个对象，不是引用，导致返回语句的时候需要复制对象，导致该方法执行速度会有所减慢</font>
+
+<font color="RoyalBlue">析构函数</font>
+
+一定要定义显式析构函数来释放类构造函数使用new分配的所有内 存，并完成类对象所需的任何特殊的清理工作。对于基类，即使它不需 要析构函数，也应提供一个虚析构函数；
+
+<font color="RoyalBlue">转换</font>
+
+使用一个参数就可以调用的构造函数定义了从参数类型到类类型的转换。将可转换的类型传递给以类为参数的函数时，**将调用转换构造函数**。在带一个参数的构造函数原型中使用 `explicit`将禁止进行隐式转换， 但仍允许显式转换：
+
+```C++
+Class Star
+{
+	...
+	Public:
+		explicit Star(Const Char * );
+		...
+};
+
+Star north;
+north = "polaris";;				//not allowed
+north = Star("Polarus");		//allowed
+```
 
 要将类对象转换为其他类型，应定义转换函数（参见第11章）。
 
-4. 按值传递对象与传递引用。编写使用对象作为参数的函数时，**应按引用而不是按值来传递对象。这样做的原因之一是为了提高效率**。按值传递对象涉及到生成 临时拷贝，即调用复制构造函数，然后调用析构函数。调用这些函数需 要时间，复制大型对象比传递引用花费的时间要多得多。如果函数不修 改对象，应将参数声明为const引用。按引用传递对象的另外一个原因是，在继承使用虚函数时，被定义 为接受基类引用参数的函数可以接受派生类；
-5. 返回对象和返回引用。有些成员函数直接返回对 象，而另一些则返回引用。有时方法必须返回对象，但如果可以不返回对象，则应返回引用。如果函数返回在函数中创建的临时对象，则不要使用引用，而是返回该对象。**如果函数返回的是通过引用或指针传递给它的对象，则应按引用返回对象**；
+<font color="blue">按值传递对象与传递引用</font>
+		编写使用对象作为参数的函数时，**应按引用而不是按值来传递对象。这样做的原因之一是为了提高效率**。按值传递对象涉及到生成 临时拷贝，即调用复制构造函数，然后调用析构函数。调用这些函数需 要时间，复制大型对象比传递引用花费的时间要多得多。
+		如果函数不修 改对象，应将参数声明为const引用。按引用传递对象的另外一个原因是，在继承使用虚函数时，被定义 为接受基类引用参数的函数可以接受派生类；
 
-![image-20210815163426527](https://static.fungenomics.com/images/2021/08/image-20210815163426527.png)
+<font color="blue">返回对象和返回引用</font>
 
-6. 使用const。 使用const来确保方法不修改调用它的对象。如果函数将参数声明为指向const的引用或指针，则不能将该 参数传递给另一个函数，除非后者也确保了参数不会被修改（即，确保const对const）。
+有些成员函数直接返回对 象，而另一些则返回引用。有时方法必须返回对象，但如果可以不返回对象，则应返回引用。如果函数返回在函数中创建的临时对象，则不要使用引用，而是返回该对象。
+
+<font color="RoyalBlue">返回对象涉及到，返回对象的临时副本</font>
+
+**如果函数返回的是通过引用或指针传递给它的对象，则应按引用返回对象**；
+
+```C++
+const Stock & Stock::topval(const Stock & s) const
+{
+    if(s.total_val > total_val)
+        return s;
+    else 
+        return *this;
+}
+```
+
+<font color="blue">使用const</font>
+
+<font color="red"> 使用const来确保方法不修改调用它的对象</font>
+
+```C++
+Star::Star(const char * x){...}
+```
+
+如果函数将参数声明为指向const的引用或指针，则不能将该参数传递给另一个函数，除非后者也确保了参数不会被修改（即，确保const对const）。
+
+```C++
+void Star::Show() const{...}
+```
+
+
 
 ### 13.8.3 公有继承的考虑因素
 
 1. is-a 关系。表示is-a关系的方式之一是，无需进行显式类型转换，基类指针就可以指向派生类对象，基类引用可以引用派生类对象。另外， 反过来是行不通的，即不能在不进行显式类型转换的情况下，将派生类指针或引用指向基类对象；
-2. 什么不能被继承：构造函数不能继承；析构函数不能继承；赋值运算符不能继承；
-3. 赋值运算符；
-4. 私有成员与保护成员；
-5. 虚方法。如果希望派生类 能够重新定义方法，则应在基类中将方法定义为虚的；如果不希望重新定义方法，则不必将其声明为虚的，这样虽然无法禁止他人重新定义方法，但表达了这样的意思：您不 希望它被重新定义；
-6. 析构函数；
-7. 友元函数。由于友元函数并非类成员，因此不能继承。然而，您可能希望派生 类的友元函数能够使用基类的友元函数。为此，可以通过强制类型转换将派生类引用或指针转换为基类引用或指针，然后使用转换后的指针 或引用来调用基类的友元函数：
 
-![image-20210815164304163](https://static.fungenomics.com/images/2021/08/image-20210815164304163.png)
+2. 什么不能被继承：构造函数不能继承；析构函数不能继承；赋值运算符不能继承；
+
+3. 赋值运算符；
+
+    ```C++
+    Brass blips;
+    BrassPlus sinps("xxxxx");
+    bliips = sinps;
+    
+    blips.operator=(snips);
+    ```
+
+    <font color="red">将派生对象赋值给</font><font color="RoyalBlue">**基类**</font>只涉及基类成员
+
+    ```C++
+    Brass gp("xxxxx");
+    BrassPlus temp;
+    temp = gp;
+    
+    temp.operator=(gp);
+    ```
+
+    派生类不能自动引用基类对象，除非有转换构造函数
+
+    ```C++
+    BrassPlus (const Brass &);
+    BrassPlus (const Brass & ba, double ml =500);
+    ```
+
+    或者是定义赋值运算符
+
+    ```C++
+    BrassPlus & BrassPlus::operator(const Brass &){...}
+    ```
+
+    
+
+4. 私有成员与保护成员；
+
+5. 虚方法。如果希望派生类 能够重新定义方法，则应在基类中将方法定义为虚的；如果不希望重新定义方法，则不必将其声明为虚的，这样虽然无法禁止他人重新定义方法，但表达了这样的意思：您不 希望它被重新定义；
+
+    ```C++
+    //按引用传递对象
+    void show(const Brass &rba)
+    {
+    	rba.viewAcct();
+    	cout<<endl;
+    }
+    //按值传递对象
+    void inadequate(Brass ba)
+    {
+    	ba.viewAcct();
+    	cout<<endl;
+    }
+    BrassPlus buzz("xxx");
+    show(buzz);
+    inadeqyate(buzz);
+    
+    show()对象引用，rba.viewAcct();->BrassPlus.viewAcct()
+    
+        inadeqyate()传值对象， ba是Brass的构造函数创建的Brass对象（向上强制转换）
+    因此 ba.viewAcct();->Brass.viewAcct()
+        只显示buzz的brass部分
+    ```
+
+    
+
+6. 析构函数；
+
+7. 友元函数。由于友元函数并非类成员，因此不能继承。然而，您可能希望派生 类的友元函数能够使用基类的友元函数。
+    为此，可以通过<font color="red">强制类型转换将派生类引用或指针转换为</font>基类引用或指针，然后使用转换后的指针 或引用来调用基类的友元函数：
+
+    ```C++
+    ostream & operator <<(ostream & os, const HasDMA &hs)
+    {
+    	os<<(const baseDMA & )hs;
+    	os<<"style"<<hs.style<<endl;
+    	return os;
+    }
+    ```
 
 8. 关于使用基类方法的说明：
     - 派生类对象自动使用继承而来的基类方法，如果派生类没有重新定 义该方法；
