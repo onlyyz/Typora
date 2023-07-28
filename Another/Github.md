@@ -86,6 +86,7 @@ git commit -m "first commit"
 git branch -M main
 
 //link
+git remote add origin 
 git remote add origin git@github.com:onlyyz/Vulkan_learn.git
 
 git push -u origin main
@@ -95,3 +96,39 @@ git push --set-upstream origin main
 git commit -m "first commit"
 ```
 
+#### 忽略文件夹
+
+Create gitignore
+
+VS code set
+
+```C++
+*# Directories*
+
+.vs/
+
+bin/
+
+bin-int/
+
+*# Files*
+
+*.user
+```
+
+git
+
+```C++
+//add
+git add *
+//设置文件夹
+git reset
+    
+//commit    
+git commit -m "Setup basic Application and Entry Point"
+
+//push
+git push origin main/master
+```
+
+![image-20230728105744436](E:/dev/Typora-Note/Another/Github.assets/image-20230728105744436.png)
