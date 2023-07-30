@@ -6,8 +6,6 @@
 git clone "  "
 ```
 
-![image-20230713161908587](C:\Users\admin\AppData\Roaming\Typora\typora-user-images\image-20230713161908587.png)
-
 #### 初始化，仓库
 
 ```C++
@@ -66,9 +64,7 @@ cat ~/.ssh/id_ed25519.pub
 
 ```
 
-![image-20230713201925971](C:\Users\admin\AppData\Roaming\Typora\typora-user-images\image-20230713201925971.png)
 
-![image-20230713201656467](C:\Users\admin\AppData\Roaming\Typora\typora-user-images\image-20230713201656467.png)
 
 ## 提交项目
 
@@ -130,5 +126,3 @@ git commit -m "Setup basic Application and Entry Point"
 //push
 git push origin main/master
 ```
-
-![image-20230728105744436](E:/dev/Typora-Note/Another/Github.assets/image-20230728105744436.png)
