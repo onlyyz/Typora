@@ -2,7 +2,7 @@
 
 #### 1、环境配置
 
-![image-20230728072755050](E:/dev/Typora-Note/Engine/00-Environment.assets/image-20230728072755050.png)
+![image-20230728072755050](E:/dev/Typora-Note/Engine/assets/image-20230728072755050.png)
 
 ```c++
 $(SolutionDir)bin\$(Configuration)-$(Platform)\$(ProjectName)\
@@ -217,3 +217,48 @@ $(SolutionDir)Hazel\src;
 5、主代码
 
 创建返回函数指针的函数，永远创建应用程序
+
+```c++
+//---EntryPoint.h
+
+#pragma once
+
+
+#ifdef HZ_PLATFORM_WINDOWS
+
+//funtion Pointer
+extern Hazel::Application* Hazel::CreateApplication();
+
+int main(int argc, char** argv) {
+	auto app = Hazel::CreateApplication();
+	app->Run();
+	delete app;
+	return 0;
+}
+#endif // HZ_PLATFORM_WINDOWS
+```
+
+```c++
+//---Sandbox.cpp
+
+#include <Hazel.h>
+
+class Sandbox : public Hazel::Application
+{
+    public:
+    Sandbox() {
+
+    }
+    ~Sandbox()
+    {
+
+    }
+
+};
+
+Hazel::Application* Hazel::CreateApplication() 
+{
+    return new Sandbox();
+}
+```
+

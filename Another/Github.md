@@ -126,3 +126,11 @@ git commit -m "Setup basic Application and Entry Point"
 //push
 git push origin main/master
 ```
+
+## 引用其他git库
+
+```c++
+git submodule add "URLpath" "filePath"
+example:E:\dev\Hazel>git submodule add https://github.com/gabime/spdlog.git Hazel/vendor/spdlog
+```
+
