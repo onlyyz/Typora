@@ -835,7 +835,235 @@ copy(dic.rbegin(),dice.rend(),out_iter);
 
 <font color="red">反向指针通过先递减，再解除引用解决了</font>这两个问题。即<font color=#66ff66>\*rp将在\*rp的当前值之前对迭代器执行解除引用</font>。也就是说
 
-如果rp指向位置 6，则*rp将是位置5的值，依次类推。程序清单16.10演示了如何使用 copy( )、istream迭代器和反向迭代器。；
+如果<font color=#66ff66>rp指向位置 6，则*rp将是位置5的值</font>，依次类推。
+
+程序清单16.10演示了如何使用 copy( )、istream迭代器和反向迭代器。
+
+```c++
+// copyit.cpp -- copy() and iterators
+#include <iostream>
+#include <iterator>
+#include <vector>
+
+int main()
+{
+    using namespace std;
+
+    int casts[10] = {6, 7, 2, 9 ,4 , 11, 8, 7, 10, 5};
+    vector<int> dice(10);
+    // copy from array to vector
+    copy(casts, casts + 10, dice.begin());
+
+    cout << "Let the dice be cast!\n";
+    // create an ostream iterator
+    ostream_iterator<int, char> out_iter(cout, " ");
+
+
+    // copy from vector to output
+    copy(dice.begin(), dice.end(), out_iter);
+    cout << endl;
+
+    cout <<"Implicit use of reverse iterator.\n";
+    copy(dice.rbegin(), dice.rend(), out_iter);
+
+    cout << endl;
+    cout <<"Explicit use of reverse iterator.\n";
+
+    // vector<int>::reverse_iterator ri;  // use if auto doesn't work
+    for (auto ri = dice.rbegin(); ri != dice.rend(); ++ri)
+        cout << *ri << ' ';
+    cout << endl;
+    // cin.get();
+    return 0; 
+}
+
+//Debug
+Let the dice be cast!
+    6, 7, 2, 9 ,4 , 11, 8, 7, 10, 5
+    Implicit    
+    逆： 6, 7, 2, 9 ,4 , 11, 8, 7, 10, 5
+    Explicit    
+    逆： 6, 7, 2, 9 ,4 , 11, 8, 7, 10, 5
+```
+
+
+
+另外三种迭代器（<font color=#4db8ff>back_insert_iterator、front_insert_iterator和 insert_iterator</font>）也将提高STL算法的通用性。
+
+很多STL函数都与copy( )相似，将结果发送到输出迭代器指示的位置。前面说过，下面的语句将值复制到从dice.begin( )开始的位置：
+
+```c++
+copy(casts, casts +10, dice.begin());
+```
+
+###### 2 <font color="red">三种插入迭代器</font>
+
+通过将复制转换为插入,插入将添加新的元素，而不会覆盖已有的数据，并使用自动内存分配来确保能够容纳新的信息。
+
+<font color="red">back_insert_iterator</font>将元素插入到<font color=#66ff66>容器尾部</font>
+
+<font color="red">front_insert_iterator</font>将元素插入到<font color=#66ff66>容器的前端</font>
+
+<font color="red">insert_iterator</font>将元素插入到insert_iterator构造函数的参数<font color=#66ff66>指定的位置前面</font>
+
+这三个插入迭代器都是输出容器概念的模型。
+
+###### <font color="DarkOrchid ">3 限制</font>
+
+<font color="red">back_insert_iterator</font>只能用于允许在<font color=#66ff66>尾部快速插入</font>的容器（快速插入指的是一个时间固定的算法，将在本章后面的“容器概念”一节做进一步讨论)，vector类符合这种要求。
+
+ <font color="red">front_insert_iterator</font>只能用于允许在起始位置做时间固定插入的容器类 型，vector类不能满足这种要求，但queue满足。
+
+<font color="red">insert_iterator</font>没有这些限制，因此可以用它把信息插入到矢量的前端。然而， <font color=#4db8ff><font color="red">front_insert_iterator</font>对于那些支持它的容器来说，完成任务的速度更快。</font>
+
+<font color=#66ff66>提示</font>
+
+>   可以用<font color=#66ff66>insert_iterator</font>将复制数据的算法转换为插入数据的算法。
+
+这些迭代器将容器类型作为模板参数，将<font color="red">实际的<font color=#66ff66>容器标识</font>符作为<font color=#66ff66>构造函数参数</font></font>。也就是说，要为名为dice的vector\<int\>容器，创建一个 back_insert_iterator，可以这样做：
+
+```c++
+back_insert_iterator<vector<int>> back_iter(dice);
+```
+
+必须声明容器类型的原因是，<font color="red">迭代器必须使用合适的容器方法</font>。 
+
+copy( )是一个独立的函数，没有<font color="DarkOrchid ">重新调整容器大小的权限</font>。但前面的声明让back_iter能够使用方法<font color=#66ff66>vector\<int\>::push_back( )</font>，该方法有这样的权限。
+
+<font color=#66ff66>front_insert_iterator</font>的方式与此相同。对于<font color=#4db8ff>insert_iterator</font>声明，还需一个<font color="red">指示插入位置</font>的构造函数参数：
+
+```c++
+ insert_iterator<vector<int>> insert_iter(dice,dice.begin());
+```
+
+程序清单16.11演示了这两种迭代器的用法，还使用for_each( )而不是ostream迭代器进行输出。
+
+```c++
+
+// inserts.cpp -- copy() and insert iterators
+#include <iostream>
+#include <string>
+#include <iterator>
+#include <vector>
+#include <algorithm>
+
+void output(const std::string & s) {std::cout << s << " ";}
+
+int main()
+{
+    using namespace std;
+    string s1[4] = {"fine", "fish", "fashion", "fate"};
+    string s2[2] = {"busy", "bats"};
+    string s3[2] = {"silly", "singers"};
+    vector<string> words(4);
+    
+    
+    copy(s1, s1 + 4, words.begin());
+    for_each(words.begin(), words.end(), output);
+    cout << endl;
+
+// construct anonymous back_insert_iterator object
+    copy(s2, s2 + 2, back_insert_iterator<vector<string> >(words));
+    for_each(words.begin(), words.end(), output);
+    cout << endl;
+
+// construct anonymous insert_iterator object
+    copy(s3, s3 + 2, insert_iterator<vector<string> >(words, words.begin()));
+    for_each(words.begin(), words.end(), output);
+    cout << endl;
+    // cin.get();
+    return 0; 
+}
+//fine fish fashion fate
+//fine fish fashion fate busy bats
+//silly singers fine fish fashion fate busy bats
+
+```
+
+第一个copy( )从s1中复制4个字符串到words中。这之所以可行，在某种程度上说是由于words被声明为能够存储4个字符串，这等于被复制的字符串数目。
+
+然后，<font color=#4db8ff>back_insert_iterator</font>将s2中的字符串插入到words数组的末尾，将words的长度增加到6个元素。最后，<font color=#66ff66>insert_iterator</font>将s3中的两个字符串插入到words的第一个元素的前面，将words的长度增加到8个元素。如果程序试图使用words.end( )和words.begin( )作为迭代器，将s2和s3复制到words中，words将没有空间来存储新数据，程序可能会由于内存违规而异常终止。
+
+------
+
+
+
+#### 16.4.5 容器种类
+
+STL具有<font color=#4db8ff>容器概念</font>和<font color=#4db8ff>容器类型</font>
+
+概念是具有名称（如容器、序列容器、关联容器等）的通用类别；<font color="red">容器类型是可用于创建具体容器对象的模板</font>。
+
+以前的11个容器类型分别是<font color=#4db8ff>deque、list、queue、priority_queue、 stack、vector、map、multimap、set、multiset和bitset</font>（本章不讨论 bitset，它是在比特级处理数据的容器）；
+
+C++11新增了<font color=#4db8ff>forward_list、 unordered_map、unordered_multimap、unordered_set</font>和 <font color=#4db8ff>unordered_multiset</font>，且不将bitset视为容器，而将其视为一种独立的类 别。因为概念对类型进行了分类，下面先讨论它们。
+
+##### **1.**    容器概念
+
+概念描述了所有容器类都通用的元素。它是一个<font color=#66ff66>概念化的抽象基类</font>——说它概念化，是因为<font color="red">容器类并不真正使用继承机制</font>。换句话说，容器概念指定了所有STL容器类都必须满足的一系列要求。
+
+容器是存储其他对象的对象。<font color=#66ff66>当容器过期时，存储在容器中的数据也将过期</font>（然而，如果数据是指针的话，则它指向的数据并不一定过期）。
+
+不能将任何类型的对象存储在容器中，不能将任何类型的对象存储在容器中
+
+C++11改进了这些概念，添加了术语<font color=#4db8ff>可复制插入（CopyInsertable）</font>和<font color=#4db8ff>可移动插入（MoveInsertable）</font>，但这里只进行简单的概述。
+
+<font color="red"> 基本容器不能保证其元素都按特定的顺序存储，也不能保证元素的顺序不变</font>，但对概念进行改进后，则可以增加这样的保证
+
+表16.5对一些通用特征进行了总结。其中:
+
+X表示容器类型，如vector；
+
+T表示存储在容器中的对象类型；
+
+a和b表示类型为X的值；r表示类型为X&的值；
+
+u表示类型为X的标识符（即如果X表示vector<int>，则u是一个vector<int>对象）
+
+| 表  达 式        | 返  回 类 型      | 说 明                                                        | 复 杂度  |
+| :--------------- | :---------------- | :----------------------------------------------------------- | :------- |
+| X ::  iterator   | 指向T的迭代器类型 | 满足正向迭代器要求的任何迭代器                               | 编译时间 |
+| X ::  value_type | T                 | T的类型                                                      | 编译时间 |
+| X u;             |                   | 创建一个名为u的空容器                                        | 固定     |
+| X( );            |                   | 创建一个匿名的空容器                                         | 固定     |
+| X u(a);          |                   | 调用复制构造函数后u == a                                     | 线性     |
+| X u = a;         |                   | 作用同X u(a);                                                | 线性     |
+| r = a;           | X&                | 调用赋值运算符后r == a                                       | 线性     |
+| (&a)->~X(  )     | void              | 对容器中每个元素应用析构函数                                 | 线性     |
+| a.begin( )       | 迭代器            | 返回指向容器第一个元素的迭代器                               | 固定     |
+| a.end(  )        | 迭代器            | 返回超尾值迭代器                                             | 固定     |
+| a.size( )        | 无符号整型        | 返回元素个数，等价于a.end( )– a.begin( )                     | 固定     |
+| a.swap(b)        | void              | 交换a和b的内容                                               | 固定     |
+| a = = b          | 可转换为  bool    | 如果a和b的长度相同，且a中每个元素都等于（= =  为真）b中相应的元素，则为真 | 线性     |
+| a != b           | 可转换为  bool    | 返回!(a= =b)                                                 | 线性     |
+
+------
+
+##### 2 <font color="red">C++11</font>新增的容器要求
+
+在这个表中
+
+rv表示类型为X的非常量右值，如函数的返回值。要求 X::iterator满足正向迭代器的要求，而以前只要求它不是输出迭代器。
+
+<center>表 16.6 C++11 新增的基本容器要求</center>
+
+| 表  达 式   | 返  回 类 型   | 说 明                                       | 复  杂 度 |
+| :---------- | :------------- | :------------------------------------------ | :-------- |
+| X u(rv);    |                | 调用移动构造函数后，u的值与rv的原始值相同   | 线性      |
+| X u = rv;   |                | 作用同X u(rv);                              |           |
+| a  = rv;    | X&             | 调用移动赋值运算符后，u的值与rv的原始值相同 | 线性      |
+| a.cbegin( ) | const_iterator | 返回指向容器第一个元素的const迭代器         | 固定      |
+| a.cend( )   | const_iterator | 返回超尾值const迭代器                       | 固定      |
+
+复制构造和复制赋值以及移动构造和移动赋值之间的差别在于：
+
+<font color="red">复制操作保留源对象，而移动操作可修改源对象</font>，还可能转让所有权，而不做任何复制。如果源对象是临时的，移动操作的效率将高于常规复制。第18章将更详细地介绍移动语义。
+
+
+
+##### 3 序列
+
+
 
 ## Last
 
