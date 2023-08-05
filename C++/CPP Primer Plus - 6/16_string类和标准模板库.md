@@ -1063,7 +1063,195 @@ rv表示类型为X的非常量右值，如函数的返回值。要求 X::iterato
 
 ##### 3 序列
 
+可以通过添加要求来改进基本的容器概念。序列（sequence）是一种重要的改进，因为7种STL容器类型<font color=#4db8ff>（deque、C++11新增的 forward_list、list、queue、priority_queue、stack和vector）</font>都是序列（本书前面说过，队列让您能够在队尾添加元素，在队首删除元素。deque表示的双端队列允许在两端添加和删除元素）。
 
+<font color="red">序列概念增加了迭代器至少是正向迭代器这样的要求</font>，这保证了元素将按特定顺序排列，<font color=#66ff66>不会在两次迭代之间发生变化。</font>
+
+array也被归类到序列容器，虽然它并不满足序列的所有要求。
+
+ 序列还要求其元素按严格的线性顺序排列，即存在第一个元素、最后一个元素，除第一个元素和最后一个元素外，每个元素前后都分别有一个元素。数组和链表都是序列，但分支结构（其中每个节点都指向两个子节点）不是。
+
+ 表16.7列出了这些操作以及序列必须完成的其他操作。该表格使用的表示法与表16.5相同，此外，
+
+t表示类型为T（存储在容器中的值的类型）的值
+
+n表示整数
+
+p、q、i和j表示迭代器。
+
+<center>表16.7 序列的要求</center>
+
+| 表  达 式         | 返  回 类 型 | 说 明                                               |
+| ----------------- | ------------ | --------------------------------------------------- |
+| X a(n, t);        |              | 声明一个名为a的由n个t值组成的序列                   |
+| X(n, t)           |              | 创建一个由n个t值组成的匿名序列                      |
+| X a(i, j)         |              | 声明一个名为a的序列，并将其初始化为区间[i，j)的内容 |
+| X(i, j)           |              | 创建一个匿名序列，并将其初始化为区间[i，j)的内容    |
+| a. insert(p, t)   | 迭代器       | 将t插入到p的前面                                    |
+| a.insert(p, n, t) | void         | 将n个t插入到p的前面                                 |
+| a.insert(p, i, j) | void         | 将区间[i，j)中的元素插入到p的前面                   |
+| a.erase(p)        | 迭代器       | 删除p指向的元素                                     |
+| a.erase(p, q)     | 迭代器       | 删除区间[p，q)中的元素                              |
+| a.clear( )        | void         | 等价于erase(begin( ), end(  ))                      |
+
+ 因为模板类<font color=#66ff66>deque、list、queue、priority_queue、stack和vector</font>都是序列概念的模型，所以它们都支持表16.7所示的运算符。
+
+除此之外，这 6个模型中的一些还可使用其他操作。在允许的情况下，它们的复杂度为固定时间。表16.8列出了其他操作。表**16.8** 序列的可选要求
+
+| 表  达 式       | 返  回 类 型 | 含 义                   | 容 器               |
+| :-------------- | :----------- | :---------------------- | :------------------ |
+| a.front( )      | T&           | *a.begin( )             | vector、list、deque |
+| a.back( )       | T&           | *- -a.end(  )           | vector、list、deque |
+| a.push_front(t) | void         | a.insert(a.begin( ), t) | list、deque         |
+| a.push_back(t)  | void         | a.insert(a.end( ), t)   | vector、list、deque |
+| a.pop_front(t)  | void         | a.erase(a.begin( ))     | list、deque         |
+| a.pop_back(t)   | void         | a.erase(- -a.end( ))    | vector、list、deque |
+| a[n]            | T&           | *(a.begin( )+ n)        | vector、deque       |
+| a.at(t)         | T&           | *(a.begin( )+ n)        | vector、deque       |
+
+表16.8有些需要说明的地方
+
+首先，a[n]和a.at(n)都返回一个指向容器中第n个元素（从0开始编号）的引用。它们之间的差别在于，<font color=#4db8ff>如果n落在容器的有效区间外，则a.at(n)将执行边界检查</font>，并引发<font color="red">out_of_range</font>异常。
+
+图16.4说明了push_front( )和push_back( )。
+
+<img src="E:\dev\Typora-Note\C++\CPP Primer Plus - 6\assets\image-20230805223939826.png" alt="image-20230805223939826" style="zoom:50%;" />
+
+下面详细介绍这7种序列容器类型。
+
+##### （1） vector
+
+vector是数组的一种类表示，它提供了自动内存管理功能，可以动态地改变vector对象的长度，并随着元素的添加和删除而增大和缩小。vector还是可反转容器（reversible container）概念的模型。这增加了两个类方法：rbegin( )和rend( )
+
+##### （2） deque
+
+deque模板类（在deque头文件中声明）表示双端队列（double- ended queue），通常被简称为deque，支持随机访问。deque对象的开始位置插入和删除元素的时间是固定的。但 vector容器执行这些操作时速度要快些。
+
+##### （3） list
+
+list模板类（在list头文件中声明）表示双向链表。除了第一个和最后一个元素外，每个元素都与前后的元素相链接，这意味着可以双向遍历链表。list和vector之间关键的区别在于，<font color=#4db8ff>list在链表中任一位置进行插入和删除的时间都是固定的</font>。
+
+list在链表中任一位置进行插入和删除的时间都是固定的，<font color=#4db8ff>list也是可反转容器</font>。与vector不同的是，l<font color="red">ist不支持数组表示法和随机访问</font>。
+
+与矢量迭代器不同，从容器中插入或删除元素之后，链表迭代器指向元素将不变
+
+list模板类还包含了链表专用的成员函数。表16.9列出了其中一些（有关STL方法和函数的完整列表，请参见附录G）。通常不必担心Alloc模板参数，因为它有默认值。
+
+<center>表16.9 list成员函数</center>
+
+| 函 数                                      | 说 明                                                        |
+| ------------------------------------------ | ------------------------------------------------------------ |
+| void merge(list<T,  Alloc>& x)             | 将链表x与调用链表合并。两个链表必须已经排序。合并后的经过排序的链表保存在调用链表中，x为空。这个函数的复杂度为线性时间 |
+| void remove(const T & val)                 | 从链表中删除val的所有实例。这个函数的复杂度为线性时间        |
+| void sort( )                               | 使用<运算符对链表进行排序；N个元素的复杂度为NlogN            |
+| void splice(iterator pos, list<T, Alloc>x) | 将链表x的内容插入到pos的前面，x将为空。这个函数的的复杂度为固定时间 |
+| void unique(  )                            | 将连续的相同元素压缩为单个元素。这个函数的复杂度为线性时间   |
+
+
+
+```c++
+// list.cpp -- using a list
+#include <iostream>
+#include <list>
+#include <iterator>
+#include <algorithm>
+void outint(int n) {std::cout << n << " ";}
+
+int main()
+{
+    using namespace std;
+    list<int> one(5, 2); // list of 5 2s
+    int stuff[5] = {1,2,4,8, 6};
+    list<int> two;
+    two.insert(two.begin(),stuff, stuff + 5 );
+    
+    int more[6] = {6, 4, 2, 4, 6, 5};
+    list<int> three(two);
+    three.insert(three.end(), more, more + 6);
+
+    cout << "List one: ";
+    for_each(one.begin(),one.end(), outint);
+    //2 2 2 2 2
+    
+    cout << endl << "List two: ";
+    for_each(two.begin(), two.end(), outint);
+    //1 2 4 8 6
+    
+    cout << endl << "List three: ";
+    for_each(three.begin(), three.end(), outint);
+    //1 2 4 8 6 6 4 2 4 6 5
+    
+    three.remove(2);
+    cout << endl << "List three minus 2s: ";
+    for_each(three.begin(), three.end(), outint);
+  	//1 4 8 6 6 4 2 4 5 6 5
+    
+    //splice( )则将原始区间移到目标地址。
+    three.splice(three.begin(), one);
+    cout << endl << "List three after splice: ";
+    for_each(three.begin(), three.end(), outint);
+    // 2 2 2 2 2 2 1 4 8 6 4 6 5
+    
+    cout << endl << "List one: ";
+    for_each(one.begin(), one.end(), outint);
+    three.unique();
+    cout << endl << "List three after unique: ";
+    for_each(three.begin(), three.end(), outint);
+  	// 2 1 4 8 6 4 6 5
+    
+    three.sort();
+    three.unique();
+    cout << endl << "List three after sort & unique: ";
+    for_each(three.begin(), three.end(), outint);
+    // 1 2 4 5 6 8
+    
+    two.sort();
+    three.merge(two);
+    cout << endl << "Sorted two merged into three: ";
+    for_each(three.begin(), three.end(), outint);
+    //11 22 44 5 66 88
+    cout << endl;
+    // cin.get();
+    return 0; 
+}
+```
+
+insert( )和splice( )之间的主要区别在于：<font color="red">insert( )将原始区间的副本插入到目标地址，而splice( )则将原始区间移到目标地址。</font>
+
+因此，在one的内容与three合并后，one为空。（splice( )方法还有其他原型，用于移动单个元素和元素区间）。<font color=#4db8ff>splice( )方法执行后，迭代器仍有效</font>。也就是说，如果将迭代器设置为指向one中的元素，则在splice( )将它重新定位到元素three后，该迭代器仍然指向相同的元素。
+
+##### （4） <font color="red">list工具箱</font>
+
+sort( )、merge( )和unique( )方法还各自拥有接受另一个参数的版本，该参数用于指定用来比较元素的函数。同样，remove( )方法也有一个接受另一个参数的版本，该参数用于指定用来确定是否删除元素的函数。这些参数都是谓词函数，将稍后介绍。
+
+##### （5） forward_list（C++11）
+
+C++11新增了容器类<font color="red">forward_list</font>，它实现了单链表。在这种链表 中，每个节点都只链接到下一个节点，而没有链接到前一个节点。因此 forward_list只需要正向迭代器，而不需要双向迭代器。因此，不同于 vector和list，forward_list是不可反转的容器。相比于list，forward_list更简单、更紧凑，但功能也更少。
+
+##### （6） queue
+
+queue模板类（在头文件queue（以前为queue.h）中声明）是一个<font color="red">适配器类</font>。
+
+由前所述，<font color=#66ff66>ostream_iterator</font>模板就是一个<font color=#4db8ff>适配器</font>，让输出流能够使用迭代器接口。同样，queue模板让底层类（默认为deque）展示典型的队列接口。
+
+queue模板的限制比deque更多。它不仅不允许随机访问队列元素，甚至不允许遍历队列。它把使用限制在定义队列的基本操作上，可以将元素添加到队尾、从队首删除元素、查看队首和队尾的值、检查元素数目和测试队列是否为空。
+
+| 方 法                  | 说 明                                   |
+| ---------------------- | --------------------------------------- |
+| bool empty(  )const    | 如果队列为空，则返回true；否则返回false |
+| size_type size( )const | 返回队列中元素的数目                    |
+| T& front(  )           | 返回指向队首元素的引用                  |
+| T&  back( )            | 返回指向队尾元素的引用                  |
+| void push(const T& x)  | 在队尾插入x                             |
+| void pop( )            | 删除队首元素                            |
+
+<center>表16.10列出了这些操作。</center>
+
+<font color="red">注意</font>
+
+>   pop( )是一个删除数据的方法，而不是检索数据的方法。如果要使用队列中的值，应首先使用front( )来检索这个值，然后使用pop()将它从队列中删除。
+
+##### （7） priority_queue
 
 ## Last
 

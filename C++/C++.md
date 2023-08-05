@@ -7,5 +7,3 @@
 ```CPP
 _CRT_SECURE_NO_WARNINGS
 ```
-
-![image-20230720233137958](E:/dev/Typora-Note/C++.assets/image-20230720233137958.png)
