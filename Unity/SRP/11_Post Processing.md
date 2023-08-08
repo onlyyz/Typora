@@ -5,7 +5,7 @@
 		在需要时进行后期处理。
 		做一个艺术化的绽放效果。
 
-![img](E:\Typora file\SRP\assets\tutorial-image-1677834262023-50.jpg)
+![img](E:\Typora-Note\Unity\SRP\assets\tutorial-image-1677834262023-50.jpg)
 
 <center>Make it glow!</center>
 
