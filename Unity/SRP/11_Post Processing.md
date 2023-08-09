@@ -5,7 +5,7 @@
 		在需要时进行后期处理。
 		做一个艺术化的绽放效果。
 
-![img](E:\Typora-Note\Unity\SRP\assets\tutorial-image-1677834262023-50.jpg)
+![img](E:\Typora-Note\assets\tutorial-image-1677834262023-50.jpg)
 
 <center>Make it glow!</center>
 
@@ -77,7 +77,7 @@ public void Render (
 
 现在我们可以创建一个空的FX后设置资产，并将其分配给<font color="DarkOrchid "> pipeline asset.</font>。
 
-<img src="E:\Typora file\SRP\assets\post-fx-settings-assigned.png" alt="img" style="zoom:50%;" />
+<img src="E:\Typora-Note\assets\post-fx-settings-assigned.png" alt="img" style="zoom:50%;" />
 
 <center>Assigned post FX settings.</center>
 
@@ -216,7 +216,7 @@ public void Render (int sourceId) {
 
 在这一点上，结果看起来应该没有什么不同，但是增加了一个额外的绘制步骤，从中间缓冲区复制到<font color="red"> final frame buffer</font>。它在帧调试器中被列为<font color="red">**Draw Dynamic**.</font>
 
-<img src="E:\Typora file\SRP\assets\rendering.png" alt="img" style="zoom:50%;" />
+<img src="E:\Typora-Note\assets\rendering.png" alt="img" style="zoom:50%;" />
 
 <center>Rendering the FX stack.</center>
 
@@ -289,7 +289,7 @@ public void Render (int sourceId) {
 
 注意，当3D图标被用于小工具时，当堆栈处于活动状态时，它们不再被物体遮挡。发生这种情况是因为场景窗口依赖于原始帧缓冲区的<font color="green">depth data</font>，而我们并没有使用这个数据。我们将在将来讨论深度与后期特效的结合
 
-![with](E:\Typora file\SRP\assets\gizmos-with-fx-1677957598392-7.png) ![without](E:\Typora file\SRP\assets\gizmos-without-fx-1677957598393-9.png)
+![with](E:\Typora-Note\assets\gizmos-with-fx-1677957598392-7.png) ![without](E:\Typora-Note\assets\gizmos-without-fx-1677957598393-9.png)
 
 <center>3D gizmos with and without FX.</center>
 
@@ -319,7 +319,7 @@ struct Varyings {
 
 使用这个ID来生成顶点位置和UV坐标。X坐标是-1，-1，3；Y坐标是-1，3，-1。为了使可见的UV坐标覆盖0-1的范围，对U使用0, 0, 2，对V使用0, 2, 0。
 
-<img src="E:\Typora file\SRP\assets\clip-space-triangle.png" alt="img" style="zoom:50%;" />
+<img src="E:\Typora-Note\assets\clip-space-triangle.png" alt="img" style="zoom:50%;" />
 
 <center> Triangle covering clip space.</center>
 
@@ -389,7 +389,7 @@ public class PostFXSettings : ScriptableObject {
 }
 ```
 
-<img src="E:\Typora file\SRP\assets\post-fx-shader.png" alt="img" style="zoom:50%;" />
+<img src="E:\Typora-Note\assets\post-fx-shader.png" alt="img" style="zoom:50%;" />
 
 <center>Post FX shader assigned.</center>
 
@@ -460,7 +460,7 @@ int fxSourceId = Shader.PropertyToID("_PostFXSource");
 
 现在我们应该看到屏幕空间的UV坐标出现在场景窗口。并在游戏窗口中。而且还出现在材质预览中，甚至出现在反射探测器中，一旦它们刷新。
 
-<img src="E:\Typora file\SRP\assets\reflection-probe-fx.png" alt="img" style="zoom:50%;" />
+<img src="E:\Typora-Note\assets\reflection-probe-fx.png" alt="img" style="zoom:50%;" />
 
 <center>Reflection probe with FX applied.</center>
 
@@ -570,13 +570,13 @@ Varyings DefaultPassVertex (uint vertexID : SV_VertexID) {
 
 通过<font color="green">bilinear filtering</font>，这就是2×2像素的平均块。
 
-<img src="E:\Typora file\SRP\assets\2x2-bilinear-downsampling.png" alt="img" style="zoom:50%;" />
+<img src="E:\Typora-Note\assets\2x2-bilinear-downsampling.png" alt="img" style="zoom:50%;" />
 
 <center>Bilinear downsampling 4×4 to 2×2.</center>
 
 这样做一次只能模糊一点。因此，我们重复这个过程，逐步降低采样，直到一个理想的水平，有效地建立一个纹理的金字塔。
 
-<img src="E:\Typora file\SRP\assets\texture-pyramid.png" alt="img" style="zoom:50%;" />
+<img src="E:\Typora-Note\assets\texture-pyramid.png" alt="img" style="zoom:50%;" />
 
 <center>Pyramid with four textures, halving dimensions each level.</center>
 
@@ -668,7 +668,7 @@ int bloomPyramidId;
 
 我们现在模糊了很多，最终的结果几乎是一致的。你可以通过帧调试器检查中间的步骤。这些步骤作为终点显得更加有用，所以我们要让它有可能提前停止。
 
-![img](E:\Typora file\SRP\assets\progressive-downsampling.png)
+![img](E:\Typora-Note\assets\progressive-downsampling.png)
 
 <center>Three iterations of progressive downsampling.</center>
 
@@ -715,7 +715,7 @@ int bloomPyramidId;
 		}
 ```
 
-<center><img src="E:\Typora file\SRP\assets\down-3.png" alt="3 steps" style="zoom:50%;" /> <img src="E:\Typora file\SRP\assets\down-5.png" alt="5 steps" style="zoom:50%;" /></center>
+<center><img src="E:\Typora-Note\assets\down-3.png" alt="3 steps" style="zoom:50%;" /> <img src="E:\Typora-Note\assets\down-5.png" alt="5 steps" style="zoom:50%;" /></center>
 
 <center>Progressive bilinear downsampling, 3 and 5 steps.</center>
 
@@ -782,7 +782,7 @@ enum Pass {
 			Draw(fromId, toId, Pass.BloomHorizontal);
 ```
 
-<center><img src="E:\Typora file\SRP\assets\down-horizontal-3.png" alt="3 steps" style="zoom:50%;" /> <img src="E:\Typora file\SRP\assets\down-horizontal-5.png" alt="5 steps" style="zoom:50%;" /></center>
+<center><img src="E:\Typora-Note\assets\down-horizontal-3.png" alt="3 steps" style="zoom:50%;" /> <img src="E:\Typora-Note\assets\down-horizontal-5.png" alt="5 steps" style="zoom:50%;" /></center>
 <center>Horizontal Gaussian, 3 and 5 steps.</center>
 
 在这一点上，结果显然是水平拉伸的，但它看起来很有希望。我们可以通过复制<font color="DarkOrchid ">BloomHorizontalPassFragment</font>，重命名它，并从行切换到列来创建垂直通道。我们在第一次传递中降低了采样率，但这次我们保持相同的尺寸来完成<font color="RoyalBlue">Gaussian filter</font>，所以文本大小的偏移不应该是双倍的。
@@ -822,7 +822,7 @@ float4 BloomVerticalPassFragment (Varyings input) : SV_TARGET {
 
 在<font color="red">DoBloom</font>中，<font color="DarkOrchid "> destination identifier</font>现在必须从高处开始，在每个<font color="green">downsampling step</font>步骤后增加两个。然后中间的纹理可以放在中间。水平绘制到中间，接着是垂直绘制到目的地。我们还必须释放额外的纹理，最简单的方法是从最后一个金字塔源头开始倒退。
 
-<img src="E:\Typora file\SRP\assets\hv-downsamling.png" alt="img" style="zoom:50%;" />
+<img src="E:\Typora-Note\assets\hv-downsamling.png" alt="img" style="zoom:50%;" />
 
 <center>Horizontal to next level, vertical at same level.</center>
 
@@ -858,7 +858,7 @@ float4 BloomVerticalPassFragment (Varyings input) : SV_TARGET {
 	}
 ```
 
-<center><img src="E:\Typora file\SRP\assets\down-gaussian-3.png" alt="3 steps" style="zoom:50%;" /> <img src="E:\Typora file\SRP\assets\down-gaussian-5.png" alt="5 steps" style="zoom:50%;" /></center>
+<center><img src="E:\Typora-Note\assets\down-gaussian-3.png" alt="3 steps" style="zoom:50%;" /> <img src="E:\Typora-Note\assets\down-gaussian-5.png" alt="5 steps" style="zoom:50%;" /></center>
 
 <center>Complete Gaussian, 3 and 5 steps.</center>
 
@@ -885,7 +885,7 @@ float4 BloomVerticalPassFragment (Varyings input) : SV_TARGET {
 
 使用<font color="DarkOrchid ">bloom</font>金字塔的顶部作为最终图像，可以产生一个统一的混合，看起来不像是有什么东西在发光。我们可以通过对金字塔向下逐步<font color="red">upsampling</font>，将所有级别的图像累积到一个单一的图像中，来获得所需的结果。
 
-<img src="E:\Typora file\SRP\assets\additive-progressive-upsampling.png" alt="img" style="zoom:50%;" />
+<img src="E:\Typora-Note\assets\additive-progressive-upsampling.png" alt="img" style="zoom:50%;" />
 
 <center>Additive progressive upsampling, reusing textures.</center>
 
@@ -963,7 +963,7 @@ for (i -= 1; i > 0; i--) {
 		);
 ```
 
-<center><img src="E:\Typora file\SRP\assets\additive-3.png" alt="3 steps" style="zoom:50%;" /> <img src="E:\Typora file\SRP\assets\additive-5.png" alt="5 steps" style="zoom:50%;" /></center>
+<center><img src="E:\Typora-Note\assets\additive-3.png" alt="3 steps" style="zoom:50%;" /> <img src="E:\Typora-Note\assets\additive-5.png" alt="5 steps" style="zoom:50%;" /></center>
 
 <center>Additive upsampling, 3 and 5 steps.</center>
 
@@ -1001,7 +1001,7 @@ for (i -= 1; i > 0; i--) {
 
 虽然高斯滤波产生了平滑的结果，但我们在上采样时仍然进行了双线性滤波，这可能会使发光体出现块状的外观。这在原始图像收缩率高的地方最为明显，特别是在运动时。
 
-<img src="E:\Typora file\SRP\assets\upsampling-bilinear.png" alt="img" style="zoom:50%;" />
+<img src="E:\Typora-Note\assets\upsampling-bilinear.png" alt="img" style="zoom:50%;" />
 
 <center>White glow on black background appears blocky.</center>
 
@@ -1032,7 +1032,7 @@ float4 BloomCombinePassFragment (Varyings input) : SV_TARGET {
 }
 ```
 
-<img src="E:\Typora file\SRP\assets\upsampling-bicubic.png" alt="img" style="zoom:50%;" />
+<img src="E:\Typora-Note\assets\upsampling-bicubic.png" alt="img" style="zoom:50%;" />
 
 <center>Bicubic upsampling yields smoother glow.</center>
 
@@ -1060,7 +1060,7 @@ float4 BloomCombinePassFragment (Varyings input) : SV_TARGET {
 		public bool bicubicUpsampling;
 ```
 
-<img src="E:\Typora file\SRP\assets\bicubic-upsampling-toggle.png" alt="img" style="zoom:50%;" />
+<img src="E:\Typora-Note\assets\bicubic-upsampling-toggle.png" alt="img" style="zoom:50%;" />
 
 <center>Bicubic upsampling toggle.</center>
 
@@ -1133,7 +1133,7 @@ RenderTextureFormat format = RenderTextureFormat.Default;
 		buffer.ReleaseTemporaryRT(bloomPrefilterId);
 ```
 
-<center><img src="E:\Typora file\SRP\assets\half-res-2.png" alt="2 steps" style="zoom:50%;" /> <img src="E:\Typora file\SRP\assets\half-res-4.png" alt="4 steps" style="zoom:50%;" /></center>
+<center><img src="E:\Typora-Note\assets\half-res-2.png" alt="2 steps" style="zoom:50%;" /> <img src="E:\Typora-Note\assets\half-res-4.png" alt="4 steps" style="zoom:50%;" /></center>
 
 <center>Bloom at half resolution, 2 and 4 steps.</center>
 
@@ -1143,27 +1143,27 @@ RenderTextureFormat format = RenderTextureFormat.Default;
 
 我们不能突然从效果中消除颜色，因为这将引入尖锐的边界，而在这里预期会有一个渐进的过渡。我们将颜色乘以权重
 
- ![CodeCogsEqn (1)](E:\Typora file\SRP\assets\CodeCogsEqn (1).gif)
+ ![CodeCogsEqn (1)](E:\Typora-Note\assets\CodeCogsEqn (1).gif)
 
 其中<font color="RoyalBlue">b是亮度，t是计算的阈值</font>。我们将使用最大的颜色的RGB的通道B，当阈值为0时，结果总是1，这使颜色保持不变。随着阈值的增加，权重曲线将向下弯曲，从而变为零，在<font color="red"> b≤t</font>时候
 
 由于曲线的形状，它被称为膝盖曲线。
 
-<img src="E:\Typora file\SRP\assets\threshold-graph.png" alt="img" style="zoom:50%;" />
+<img src="E:\Typora-Note\assets\threshold-graph.png" alt="img" style="zoom:50%;" />
 
 <center>Thresholds 0.25, 0.5, 0.75, and 1.</center>
 
 这条曲线在一个角度上达到零，这意味着尽管过渡比钳子更平滑，但仍然有一个突然的截止点。这就是为什么它也被称为硬膝。我们可以通过改变权重来控制膝盖的形状
 
-![CodeCogsEqn](E:\Typora file\SRP\assets\CodeCogsEqn.gif)
+![CodeCogsEqn](E:\Typora-Note\assets\CodeCogsEqn.gif)
 
 其中
 
-![CodeCogsEqn (1)](E:\Typora file\SRP\assets\CodeCogsEqn (1)-1678029245461-3.gif)
+![CodeCogsEqn (1)](E:\Typora-Note\assets\CodeCogsEqn (1)-1678029245461-3.gif)
 
 k是Knee 0 - 1的滑块
 
-<img src="E:\Typora file\SRP\assets\knee-graph.png" alt="img" style="zoom:50%;" />
+<img src="E:\Typora-Note\assets\knee-graph.png" alt="img" style="zoom:50%;" />
 
 <center>Threshold 1 with knee 0, 0.25, 0.5, 0.75, and 1.</center>
 
@@ -1229,9 +1229,9 @@ float4 BloomPrefilterPassFragment (Varyings input) : SV_TARGET {
 }
 ```
 
-<img src="E:\Typora file\SRP\assets\threshold-inspector.png" alt="inspector" style="zoom:50%;" />
+<img src="E:\Typora-Note\assets\threshold-inspector.png" alt="inspector" style="zoom:50%;" />
 
-<img src="E:\Typora file\SRP\assets\threshold-scene.png" alt="scene" style="zoom:67%;" />
+<img src="E:\Typora-Note\assets\threshold-scene.png" alt="scene" style="zoom:67%;" />
 
 <center>Four iterations with threshold and knee 0.5.</center>
 
@@ -1244,7 +1244,7 @@ float4 BloomPrefilterPassFragment (Varyings input) : SV_TARGET {
 		public float intensity;
 ```
 
-<img src="E:\Typora file\SRP\assets\intensity.png" alt="img" style="zoom:50%;" />
+<img src="E:\Typora-Note\assets\intensity.png" alt="img" style="zoom:50%;" />
 
 <center>Open-ended intensity.</center>
 
@@ -1294,6 +1294,6 @@ float4 BloomCombinePassFragment (Varyings input) : SV_TARGET {
 }
 ```
 
-<center><img src="E:\Typora file\SRP\assets\intensity-05.png" alt="0.5" style="zoom:50%;" /> <img src="E:\Typora file\SRP\assets\intensity-5.png" alt="5" style="zoom:50%;" /></center>
+<center><img src="E:\Typora-Note\assets\intensity-05.png" alt="0.5" style="zoom:50%;" /> <img src="E:\Typora-Note\assets\intensity-5.png" alt="5" style="zoom:50%;" /></center>
 
 <center>Intensity 0.5 and 5.</center>
