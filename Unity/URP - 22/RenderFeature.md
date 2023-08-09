@@ -1,3 +1,5 @@
+
+
 ### 
 
 1、不透明纹理
@@ -61,3 +63,4 @@ public bool IsTileCompatible()=> false;
 ```
 
 ![image-20230809174142591](E:\Typora-Note\assets\image-20230809174142591.png)
+
