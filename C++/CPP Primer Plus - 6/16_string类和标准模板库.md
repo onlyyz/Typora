@@ -1234,7 +1234,7 @@ queue模板类（在头文件queue（以前为queue.h）中声明）是一个<fo
 
 由前所述，<font color=#66ff66>ostream_iterator</font>模板就是一个<font color=#4db8ff>适配器</font>，让输出流能够使用迭代器接口。同样，queue模板让底层类（默认为deque）展示典型的队列接口。
 
-queue模板的限制比deque更多。它不仅不允许随机访问队列元素，甚至不允许遍历队列。它把使用限制在定义队列的基本操作上，可以将元素添加到队尾、从队首删除元素、查看队首和队尾的值、检查元素数目和测试队列是否为空。
+queue模板的限制比deque更多。它不仅<font color=#66ff66>不允许随机访问队列元素，甚至不允许遍历队列</font>。它把使用限制在定义队列的基本操作上，可以将元素添加到队尾、从队首删除元素、查看队首和队尾的值、检查元素数目和测试队列是否为空。
 
 | 方 法                  | 说 明                                   |
 | ---------------------- | --------------------------------------- |
@@ -1252,6 +1252,469 @@ queue模板的限制比deque更多。它不仅不允许随机访问队列元素�
 >   pop( )是一个删除数据的方法，而不是检索数据的方法。如果要使用队列中的值，应首先使用front( )来检索这个值，然后使用pop()将它从队列中删除。
 
 ##### （7） priority_queue
+
+支持的操作与queue相同。两者之间的主要区别在于，在priority_queue中，最大的元素被移到队首。
+
+内部区别在于，默认的底层类是vector。可以修改用于确定哪个元素放到队首的比较方式，方法是提供一个可选的构造函数参数：
+
+```c++
+priority_queue<int> pg1;
+priority_queue<int> pg2 (greater<int>);
+```
+
+greater< >( )函数是一个预定义的函数对象，本章稍后将讨论它。
+
+##### （8） stack
+
+也是一个适配器类，它给底层类（默认情况下为vector）提供了典型的栈接口
+
+stack模板的限制比vector更多。它<font color=#66ff66>不仅不允许随机访问栈元素，甚至不允许遍历栈</font>。它把使用限制在定义栈的基本操作上，即可以将<font color="red">压入推到栈顶、从栈顶弹出元素、查看栈顶的值、检查元素数目和测试栈是否为空</font>。表16.11列出了这些操作。
+
+<center>表**16.11 stack**的操作</center>
+
+| 方 法                  | 说 明                                 |
+| ---------------------- | ------------------------------------- |
+| bool empty(  )const    | 如果栈为空，则返回true；否则返回false |
+| size_type size( )const | 返回栈中的元素数目                    |
+| T& top( )              | 返回指向栈顶元素的引用                |
+| void push(const T& x)  | 在栈顶部插入x                         |
+| void pop( )            | 删除栈顶元素                          |
+
+>    与queue相似，如果要使用栈中的值，必须首先使用top( )来检索这个值，然后使用pop( )将它从栈中删除。
+
+##### （9）  array（C++11）
+
+它并非STL容器，因为其长度是固定的。因此，array没有定义调整容器大小的操作，如push_back( )和insert( )，但定义了对它来说有意义的成员函数，如operator [] ()和at( )。
+
+可将很多标准STL算法用于array对象，如copy( )和for_each( )。
+
+#### 16.4.6 关联容器
+
+关联容器（<font color=#66ff66>associative container</font>）是对容器概念的另一个改进。关联容器将值与键关联在一起，并<font color="red">使用键来查找值</font>。
+
+<font color=#FFCE70>For example</font>：值可以是表示雇员信息（如姓名、地址、办公室号码、家庭电话和工作电话、健康计划等）的结构，而键可以是唯一的员工编号。
+
+对于容器X，表达式<font color=#66ff66>X::value_type</font>通常指出了存储在容器中的值类型。对于关联容器来说，表达式 <font color=#66ff66>X::key_type</font>指出了键的类型。
+
+<font color="red">优点</font>：它提供了对元素的快速访问。与序列相似，关联容器也允许插入新元素，但不能指定元素的插入位置。原因是关联容器通常有用于<font color=#4db8ff>确定数据放置位置的算法，以便能够快速检索信息</font>。
+
+ 关联容器通常是使用<font color="red">某种树</font>实现的
+
+树是一种数据结构，其根节点链接到一个或两个节点，而这些节点又链接到一个或两个节点，从而形成分支结构。像链表一样，节点使得添加或删除数据项比较简单；但相对于链表，树的查找速度更快。
+
+##### 1 4种关联容器
+
+STL提供了4种关联容器：<font color=#66ff66>set、multiset、map和multimap</font>。前两种是在头文件set（以前分别为set.h和multiset.h）中定义的，而后两种是在头文件map（以前分别为map.h和multimap.h）中定义的。
+
+最简单的<font color="red">关联容器是set</font>，其值类型与键相同，<font color=#66ff66>键是唯一的</font>。确实，对于set来说，值就是键。 multiset类似于set，只是可能有多个值的键相同。
+
+在map中，值与键的类型不同，键是唯一的，每个键只对应一个值。multimap与map相似，只是一个键可以与多个值相关联。
+
+###### **1**．**set**示例
+
+STL set模拟了多个概念，它是关联集合，可反转，可排序，且<font color="red">键是唯一的，所以不能存储多个相同的值</font>。与vector和list相似，set也使用模板参数来指定要存储的值类型：
+
+```c++
+set<string> A;	//a set of string objects
+```
+
+第二个模板参数是可选的，可用于指示用来对键进行排序的比较函数或对象。默认情况下，将使用模板less< >（稍后将讨论）。老式 C++实现可能没有提供默认值，因此必须显式指定模板参数：
+
+```c++
+set<string, less<string>> A;	//older implementation
+```
+
+请看下面的代码：
+
+```c++
+const int N = 6;
+string s1[N] = {"buffon", "thinkers", "for", "heavy", "can", "for" };
+
+set<string> A{s1, s1 + N};	//initialize set A using a range form array
+ostream_iterator<string , char> out(cout , " ");
+copy(A.begin(), A.end() , out);
+//buffon can for heavy thinkers
+```
+
+set也有一个将迭代器区间作为参数的构造函数（参见表16.6）。这提供了一种将集合初始化为数组内容的简单方法。
+
+最后一个元素是超尾，s1 + N指向数组s1尾部后面的一个位置。上述代码片段的输出表明，<font color="red">键是唯一的</font>（字符串“for”在数组中出现了2次，但在集合中只出现1次），且集合被排序：
+
+```c++
+buffon can for heavy thinkers
+```
+
+<font color="red">set_union( )</font>函数接受5个迭代器参数。前两个迭代器定义了第一个集合的区间，接下来的两个定义了第二个集合区间，最后一个迭代器是<font color=#4db8ff>输出迭代器</font>，指出将结果集合复制到什么位置。例如，要显示集合A和B的并集，可以这样做：
+
+```c++
+set_union(A.begin(), A.end() , B.begin(), B.end(), ostream_iterator<string , char> out(cout , " "));
+```
+
+将结果放到集合C中，关联集合将键看作常量，所以C.begin( )返回的迭代器是<font color="DarkOrchid ">常量迭代器</font>，不能用作输出迭代器。
+
+set_union( )将<font color=#66ff66>覆盖容器中已有的数据</font>，并要求容器有足够的空间容纳新信息。C是空的
+
+<font color="red">insert_iterator</font>可以将<font color=#4db8ff>复制转换为插入</font>。另外，它还<font color=#66ff66>模拟了输出迭代器概念</font>，可以用它将信息写入容器。因此，可以创建一个匿名insert_iterator，将信息复制给C。前面说过，其构造函数将容器名称和迭代器作为参数：
+
+```c++
+set_union(A.begin(), A.end() , B.begin(), B.end(),
+  insert_iterator<set<string> > (C, C.begin()));
+```
+
+ 函数<font color=#4db8ff>set_intersection</font>( )和<font color=#4db8ff>set_difference</font>( )分别查找交集和获得两个集合的差，它们的接口与set_union( )相同。
+
+两个有用的set方法是<font color=#66ff66>lower_bound</font>( )和<font color=#66ff66>upper_bound</font>( )。
+
+<font color=#66ff66>lower_bound</font>( )将<font color="red">键作为参数并返回一个迭代器</font>，该迭代器指向集合中第一个不小于键参数的成员。
+
+<font color=#66ff66>upper_bound</font>( )将键作为参数，并返回一个迭代器，该迭代器指向集合中第一个大于键参数的成员。
+
+
+
+```c++
+// setops.cpp -- some set operations
+#include <iostream>
+#include <string>
+#include <set>
+#include <algorithm>
+#include <iterator>
+
+int main()
+{
+    using namespace std;
+    const int N = 6;
+    string s1[N] = {"buffoon", "thinkers", "for", "heavy", "can", "for"};
+    string s2[N] = {"metal", "any", "food", "elegant", "deliver","for"};
+    set<string> A(s1, s1 + N);
+    set<string> B(s2, s2 + N);
+
+    ostream_iterator<string, char> out(cout, " ");
+    cout << "Set A: ";
+    copy(A.begin(), A.end(), out);
+    cout << endl;
+    cout << "Set B: ";
+    copy(B.begin(), B.end(), out);
+    cout << endl;
+
+    cout << "Union of A and B:\n";
+    set_union(A.begin(), A.end(), B.begin(), B.end(), out);
+    cout << endl;
+
+    cout << "Intersection of A and B:\n";
+    set_intersection(A.begin(), A.end(), B.begin(), B.end(), out);
+    cout << endl;
+
+    cout << "Difference of A and B:\n";
+    set_difference(A.begin(), A.end(), B.begin(), B.end(), out);
+    cout << endl;
+
+    set<string> C;
+    cout << "Set C:\n";
+    set_union(A.begin(), A.end(), B.begin(), B.end(),
+              insert_iterator<set<string> >(C, C.begin()));
+    copy(C.begin(), C.end(), out);
+    cout << endl;
+
+    string s3("grungy");
+    C.insert(s3);
+    cout << "Set C after insertion:\n";
+    copy(C.begin(), C.end(),out);
+    cout << endl;
+
+    cout << "Showing a range:\n";
+    copy(C.lower_bound("ghost"),C.upper_bound("spook"), out);
+    cout << endl;
+    // cin.get();
+    return 0; 
+
+}
+```
+
+<img src="E:\dev\Typora-Note\C++\CPP Primer Plus - 6\assets\image-20230806183000879.png" alt="image-20230806183000879" style="zoom:50%;" />
+
+###### 2．multimap示例
+
+与set相似，multimap也是<font color="red">可反转的、经过排序的关联容器</font>，但键和值的类型不同，且<font color=#66ff66>同一个键可能与多个值相关联</font>。
+
+基本的multimap声明使用<font color=#66ff66>模板参数指定键的类型和存储的值类型</font>。例如，下面的声明创建一个multimap对象，其中键类型为int，存储的值类型为string：
+
+```c++
+multimap<int , string> codes;
+```
+
+第3个模板参数是可选的，指出用于<font color=#4db8ff>对键进行排序的比较函数或对象</font>。在默认情况下，将使用模板less< >（稍后将讨论），该模板将键类型作为参数。老式C++实现可能要求显式指定该模板参数。
+
+为将信息结合在一起，实际的<font color=#66ff66>值类型将键类型和数据类型</font>结合为一对。STL使用模板类<font color=#4db8ff>pair<class T, class U></font>将这两种值存储到一个对象中。
+
+如果keytype是键类型，而datatype是存储的数据类型，则值类型为pair<const keytype, datatype>。例如，前面声明的codes对象的值类型为pair<const int, string>。
+
+假设要用区号作为键来存储城市名，则一种方法是创建一个pair，再将它插入：
+
+```c++
+pair<const int, string> item(213, "los Angels");
+codes.insert(item);
+```
+
+也可使用一条语句创建匿名pair对象并将它插入：
+
+```c++
+codes.insert(pair<const int, string> item(213, "los Angels"));
+```
+
+因为<font color="red">数据项是按键排序</font>的，所以不需要指出插入位置。
+
+对于pair对象，可以使用<font color=#66ff66>first和second成员来访问其两个部分</font>了：
+
+```c++
+pair<const int, string> item(213, "los Angels");
+cout<<item.first<<" "<<item.second<<endl;
+//int string
+//213 los Angels
+```
+
+<font color=#FFCE70>如何获得有关multimap对象的信息呢？</font>
+
+成员函数<font color=#4db8ff>count( )</font>接受键作为参数，并返回具有该键的元素数目。
+
+成员函数<font color=#4db8ff>lower_bound( )和 upper_bound( )</font>将键作为参数，且工作原理与处理set时相同。
+
+成员函数 <font color=#4db8ff>equal_range( )</font>用键作为参数，且返回两个迭代器，它们表示的区间与该键匹配。
+
+为返回两个值，该方法将它们封装在一个pair对象中，这里pair的两个模板参数都是迭代器。例如，下面的代码打印codes对象中区号为718的所有城市：
+
+```c++
+pair<multimap<Keytype, string>::iteratpr, multimap<Keytype, string>::iteratp> range
+    = codes.equal_range(718);
+cout<< "Cotoes with area code 718: \n";
+std::multimap<Keytype, std::string>::iteratpr it;
+
+for(it = range.first; it ! = range.second; ++it)
+{
+    cout<<(*it).second<< endl;
+}
+```
+
+在声明中可使用C++11自动类型推断功能，这样代码将简化为如下所示：
+
+```c++
+auto range = codes.equal_range(718);
+cout<< "Cotoes with area code 718: \n";
+for(it = range.first; it ! = range.second; ++it)
+{
+    cout<<(*it).second<< endl;
+}
+```
+
+程序清单16.14演示了上述大部分技术，它也使用typedef来简化代码：
+
+```c++
+// multmap.cpp -- use a multimap
+#include <iostream>
+#include <string>
+#include <map>
+#include <algorithm>
+
+typedef int KeyType;
+typedef std::pair<const KeyType, std::string> Pair;
+typedef std::multimap<KeyType, std::string> MapCode;
+
+int main()
+{
+    using namespace std;
+    MapCode codes;
+
+    codes.insert(Pair(415, "San Francisco"));
+    codes.insert(Pair(510, "Oakland"));
+    codes.insert(Pair(718, "Brooklyn"));
+    codes.insert(Pair(718, "Staten Island"));
+    codes.insert(Pair(415, "San Rafael"));
+    codes.insert(Pair(510, "Berkeley"));
+
+    cout << "Number of cities with area code 415: "
+        << codes.count(415) << endl;
+    cout << "Number of cities with area code 718: "
+        << codes.count(718) << endl;
+    cout << "Number of cities with area code 510: "
+        << codes.count(510) << endl;
+    cout << "Area Code   City\n";
+    MapCode::iterator it;
+    for (it = codes.begin(); it != codes.end(); ++it)
+        cout << "    " << (*it).first << "     "
+        << (*it).second    << endl;
+
+    pair<MapCode::iterator, MapCode::iterator> 
+        auto range
+        = codes.equal_range(718);
+    cout << "Cities with area code 718:\n";
+    for (it = range.first; it != range.second; ++it)
+        cout <<  (*it).second    << endl;
+    // cin.get();
+    return 0; 
+
+}
+```
+
+<img src="E:\dev\Typora-Note\C++\CPP Primer Plus - 6\assets\image-20230806231930083.png" alt="image-20230806231930083" style="zoom:50%;" />
+
+#### **16.4.5** 无序关联容器（**C++11**）
+
+无序关联容器是对容器概念的另一种改进
+
+与关联容器一样，无序关联容器也将值与键关联起来，并使用键来查找值。但底层的差别在于，关联容器是基于树结构的，而无序关联容器是基于<font color="red">数据结构哈希表</font>的，这旨在提高添加和删除元素的速度以及提高查找算法的效率。有4种无序关联容器，它们是<font color=#4db8ff>unordered_set、unordered_multiset、 unordered_map和unordered_multimap</font>，将在附录G更详细地介绍。
+
+### **16.5**  函数对象
+
+很多STL算法都使用函数对象——也叫函数符（functor）。函数符是可以以函数方式与( )结合使用的任意对象。这包括函数名、指向函数的指针和重载了( )运算符的类对象（即定义了函数operator( )( )的类）。
+
+#### **16.5.1**  函数符概念
+
+正如STL定义了容器和迭代器的概念一样，它也定义了函数符概念。
+
+1.  生成器（<font color=#4db8ff>generator</font>)是不用参数就可以调用的函数符。
+2.  一元函数（<font color=#4db8ff>unary function</font>）是用一个参数可以调用的函数符。
+3.  二元函数（<font color=#4db8ff>binary function</font>)是用两个参数可以调用的函数符。
+
+例如，提供给for_each( )的函数符应当是一元函数，因为它每次用于一个容器元素。
+
+当然，这些概念都有相应的改进版：
+
+1.  返回bool值的一元函数是谓词（<font color=#4db8ff>predicate</font>)；
+2.  返回bool值的二元函数是二元谓词（<font color=#4db8ff>binary predicate</font>)。
+
+表**16.12** 运算符和相应的函数符
+
+ 
+
+| 运 算 符 | 相应的函数符  |
+| -------- | ------------- |
+| +        | plus          |
+| -        | minus         |
+| *        | multiplies    |
+| /        | divides       |
+| %        | modulus       |
+| -        | negate        |
+| = =      | equal_to      |
+| ! =      | not_equal_to  |
+| >        | greater       |
+| <        | less          |
+| >=       | greater_equal |
+| <=       | less_equal    |
+| &&       | logical_and   |
+| ǁ        | logical_or    |
+| !        | logical_not   |
+
+![img](E:\dev\Typora-Note\C++\CPP Primer Plus - 6\assets\clip_image001-1691337370328-8.gif)老式C++实现使用函数符名times，而不是multiplies。
+
+#### 16.5.3  自适应函数符和函数适配器
+
+表16.12列出的预定义函数符都是自适应的。实际上STL有5个相关的概念：
+
+1.  自适应生成器（adaptable generator）
+2.  自适应一元函数（adaptable unary function）
+3.  自适应二元函数（adaptable binary function）
+4.  自适应谓词（adaptable predicate）
+5.  自适应二元谓词（adaptable binary predicate）
+
+使函数符成为自适应的原因是，它携带了<font color=#4db8ff>标识参数类型和返回类型的typedef成员</font>。这些成员分别是<font color=#66ff66>result_type、first_argument_type和 second_argument_type</font>，它们的作用是不言自明的。例如：
+
+plus\<int\>对象的返回类型被标识为<font color=#FFCE70>plus\<in\t>::result_type</font>，这是int的typedef。
+
+函数符自适应性的意义在于：函数适配器对象可以使用函数对象，并认为存在这些typedef成员。
+
+<font color="DarkOrchid ">例如：</font>接受一个自适应函数符参数的函数可以使用result_type成员来声明一个与函数的返回类型匹配的变量。
+
+STL提供了使用这些工具的函数适配器类。例如，假设要将矢量gr8的每个元素都增加2.5倍，则需要使用接受一个一元函数参数的transform( )版本，就像前面的例子那样：
+
+```c++
+transform(gr8.begin(), gr8.end(), out ,sqrt)
+```
+
+multiplies( )函数符可以执行乘法运行，但它是二元函数。因此需要一个函数适配器，将接受两个参数的函数符转换为接受1个参数的函数符。
+
+前面的TooBig2示例提供了一种方法，但STL使用binder1st和 binder2nd类自动完成这一过程，它们<font color=#4db8ff>将自适应二元函数转换为自适应一元函数</font>。
+
+ 来看binder1st。假设有一个自适应二元函数对象f2( )，则可以创建一个binder1st对象，该对象与一个将被用作f2( )的第一个参数的特定值（val）相关联：
+
+```c++
+binderlst(f2, val) f1;
+
+f1(x);
+f2(val, x);
+f1(x) = f2(val, x);
+```
+
+这样，使用单个参数调用f1(x)时，返回的值与将val作为第一参 数、将f1( )的参数作为第二参数调用f2( )返回的值相同。<font color="red">即f1(x)等价于 f2(val, x)</font>，只是前者是一元函数，而不是二元函数。f2( )函数被适配。同样，仅当f2( )是一个自适应函数时，这才能实现。
+
+看上去有点麻烦。然而，STL提供了函数bind1st( )，以简化 binder1st类的使用。可以问其提供用于构建binder1st对象的函数名称和值，它将返回一个这种类型的对象。
+
+<font color="DarkOrchid ">例如：</font>，要将二元函数multiplies( )转换为将参数乘以2.5的一元函数，则可以这样做：
+
+```c++
+binderlst(multiplies<double>(), 2.5) ;
+```
+
+因此，将gr8中的每个元素与2.5相乘，并显示结果的代码如下：
+
+```c++
+transform(gr8.begin(), gr8.end(), out, binderlst(multiplies<double>(), 2.5) );
+```
+
+binder2nd类与此类似，只是将常数赋给第二个参数，而不是第一个参数。它有一个名为bind2nd的助手函数，该函数的工作方式类似于 bind1st。
+
+<center>程序清单16.16将一些最近的示例合并成了一个小程序。</center>
+
+```c++
+// multmap.cpp -- use a multimap
+#include <iostream>
+#include <string>
+#include <map>
+#include <algorithm>
+
+typedef int KeyType;
+typedef std::pair<const KeyType, std::string> Pair;
+typedef std::multimap<KeyType, std::string> MapCode;
+
+int main()
+{
+    using namespace std;
+    MapCode codes;
+
+    codes.insert(Pair(415, "San Francisco"));
+    codes.insert(Pair(510, "Oakland"));
+    codes.insert(Pair(718, "Brooklyn"));
+    codes.insert(Pair(718, "Staten Island"));
+    codes.insert(Pair(415, "San Rafael"));
+    codes.insert(Pair(510, "Berkeley"));
+    
+    cout << "Number of cities with area code 415: "
+         << codes.count(415) << endl;
+    cout << "Number of cities with area code 718: "
+         << codes.count(718) << endl;
+    cout << "Number of cities with area code 510: "
+         << codes.count(510) << endl;
+    cout << "Area Code   City\n";
+    MapCode::iterator it;
+    for (it = codes.begin(); it != codes.end(); ++it)
+        cout << "    " << (*it).first << "     "
+            << (*it).second    << endl;
+    
+    pair<MapCode::iterator, MapCode::iterator> 
+    	auto range
+         = codes.equal_range(718);
+    cout << "Cities with area code 718:\n";
+    for (it = range.first; it != range.second; ++it)
+        cout <<  (*it).second    << endl;
+    // cin.get();
+    return 0; 
+
+}
+```
+
+![image-20230807000914303](E:\dev\Typora-Note\C++\CPP Primer Plus - 6\assets\image-20230807000914303.png)
+
+C++11提供了<font color="red">函数指针和函数符的替代品</font>——<font color="red">lambda</font>表达式，这将在第18章讨论。
+
+### 16.6 算法
 
 ## Last
 
