@@ -10,17 +10,20 @@ Create  => the Pass.cs
 创建pass, 传递Shader和渲染事件
 
 OnCameraSetup =>ConfigureTarget
+Execute->InternalStartRendering->
  在渲染摄像机之前，渲染器会调用此方法。
  如果需要配置渲染目标及其清除状态，并创建临时渲染目标纹理，则重载此方法。
  如果一个渲染传递没有覆盖此方法，则此渲染传递会渲染到活动的摄像机的渲染目标。
  千万不要调用 CommandBuffer.SetRenderTarget。而应调用 <c>ConfigureTarget</c> 和 <c>ConfigureClear</c>。
+在 ScriptableRenderPass API 中添加了 OnCameraSetup() 函数，渲染器在渲染每个摄像头前都会调用该函数
 
 ConfigureTarget
  为本次渲染传递配置渲染目标。调用此方法代替 CommandBuffer.SetRenderTarget 方法。
  此方法应在 Configure.SetRenderTarget 中调用。
 
 
-AddRenderPasses => SetupRenderPasses
+AddRenderPasses => EnqueuePass
+RenderSingleCamera->->AddRenderPasses->EnqueuePass
  注入创建的渲染Pass 存在多注入，重复注入的Bug
 
 SetupRenderPasses
@@ -29,6 +32,8 @@ SetupRenderPasses
 Execute
 有点像onRenderImage，似乎每帧渲染，Drew
 判断材质是否丢失， 以及Volume 组件
+SetupRenderPasses
+InternalStartRendering->InternalStartRendering->OnCameraSetup-	>ConfigureTarget
 
 Dispose
 GC dispos 和释放
@@ -36,6 +41,64 @@ GC dispos 和释放
 Volume
 Inherits from SRP class
 Volume只是插值用，可以通过获取component去添加参数
+
+
+
+
+
+
+
+//TODO:
+RenderPass 是计算渲染的内容
+RenderFeature模块是输入Shader，调用Pass去执行结果。
+
+RenderFeature执行顺序：
+主要是有 设置模块(Settings)  初始化模块(Create) 执行逻辑模块(AddRenderPasses) 
+Setting: 设置
+
+Create() : render feature初始化的时候调用
+
+AddRenderPasses() : 每帧调用|渲染过程
+
+
+
+CustomRenderPass执行顺序：
+
+RenderPassEvent:渲染事件
+
+OnCameraSetUp() : 每帧执行，在里面申请RenderTexture、设置RenderTarget、和ClearRenderTarget。记得用ConfigureRenderTarget()和ConfigureClear()，不要用cmd.SetRenderTarget()这些方法，用urp推荐的方法。
+// 在 ScriptableRenderPass API 中添加了 OnCameraSetup() 函数，渲染器在渲染每个摄像头前都会调用该函数。
+
+
+Execute()： 每帧执行，在里面做DrawMesh或者Blit之类的操作。可以用CommandBufferPool.Get("String")来申请CommandBuffer，之后要记得通过Context.ExecuteCommandBuffer来提交命令。CommandBuffer用完之后记得释放
+
+OnCameraCleanUp():每帧执行，在这里面释放申请的RT。
+
+
+
+Volume and Shader
+
+Shader和Volume组件的属性是在Render 渲染里关联起来的，使用SetFloat方法 
+
+
+
+
+获取当前相机的目标RT：
+
+因为主相机是直接渲染到视口，没用绑定RenderTexture，所以用renderingData.CameraData.Camera.RenderTarget获取到的可能是空值
+
+实际上应该用renderingData.CameraData.renderer.cameraColorTarget来获取颜色RT。 
+
+
+
+//Todo
+OnCameraSetup()
+DepthOnlyPass、CopyDepthPass 和 CopyColorPass 现在使用 OnCameraSetup() 而不是 Configure() 在执行前设置其通道，因为它们只需在每个摄像头上获取一次渲染纹理，而不是在每个眼睛上获取一次。
+https://docs.unity3d.com/Packages/com.unity.render-pipelines.universal@14.0/changelog/CHANGELOG.html?q=OnCameraSetup
+
+//分配RTHandle 纹理的分配使用
+RenderingUtils.ReAllocateIfNeeded(ref mTempRT0, descriptor, name: mTempRT0Name);
+
 */
 namespace UnityEngine.Experiemntal.Rendering.Universal
 {
@@ -346,4 +409,6 @@ namespace UnityEngine.Experiemntal.Rendering.Universal
         public bool IsTileCompatible()=> false;
     }
 }
+
 ```
+
