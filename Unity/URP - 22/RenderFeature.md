@@ -62,5 +62,5 @@ public bool IsActive()
 public bool IsTileCompatible()=> false;
 ```
 
-![image-20230809174142591](E:\Typora-Note\assets\image-20230809174142591.png)
+![image-20230809174142591](./../../assets/image-20230809174142591.png)
 

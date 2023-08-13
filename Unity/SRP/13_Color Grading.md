@@ -4,7 +4,7 @@
 		复制多个URP/HDRP颜色分级工具。
 		使用颜色LUT。
 
-![img](E:\Typora-Note\assets\tutorial-image-1678182228761-1.jpg)
+![img](./../../Typora-Note/assets/tutorial-image-1678182228761-1.jpg)
 
 <center>Tweaking colors to create a mood.</center>
 
@@ -141,7 +141,7 @@ public struct ColorAdjustmentsSettings {
 	};
 ```
 
-<img src="E:\Typora-Note\assets\settings.png" alt="img" style="zoom:50%;" />
+<img src=".\..\..\\Typora-Note\assets\settings.png" alt="img" style="zoom:50%;" />
 
 <center>Settings for color adjustments.</center>
 
@@ -212,7 +212,7 @@ float3 ColorGrade (float3 color) {
 }
 ```
 
-<center><img src="E:\Typora-Note\assets\post-exposure-minus-2.png" alt="minus 2" style="zoom:50%;" /> <img src="E:\Typora-Note\assets\post-exposure-plus-2.png" alt="plus 2" style="zoom:50%;" /></center>
+<center><img src=".\..\..\\Typora-Note\assets\post-exposure-minus-2.png" alt="minus 2" style="zoom:50%;" /> <img src=".\..\..\\Typora-Note\assets\post-exposure-plus-2.png" alt="plus 2" style="zoom:50%;" /></center>
 
 <center>Post exposure −2 and 2.</center>
 
@@ -243,7 +243,7 @@ float3 ColorGradingContrast (float3 color) {
 }
 ```
 
-<img src="E:\Typora-Note\assets\logc.png" alt="minus 50" style="zoom:50%;" />
+<img src=".\..\..\\Typora-Note\assets\logc.png" alt="minus 50" style="zoom:50%;" />
 
 <center>Linear and Log C.</center>
 
@@ -254,7 +254,7 @@ color = ColorGradingContrast(color);
 	color = max(color, 0.0);
 ```
 
-<center><img src="E:\Typora-Note\assets\contrast-minus-50.png" alt="minus 50" style="zoom:50%;" /> <img src="https://catlikecoding.com/unity/tutorials/custom-srp/color-grading/color-adjustments/contrast-plus-50.png" alt="plus 50" style="zoom:50%;" /></center>
+<center><img src=".\..\..\\Typora-Note\assets\contrast-minus-50.png" alt="minus 50" style="zoom:50%;" /> <img src="https://catlikecoding.com/unity/tutorials/custom-srp/color-grading/color-adjustments/contrast-plus-50.png" alt="plus 50" style="zoom:50%;" /></center>
 
 <center>Contrast −50 and 50.</center>
 
@@ -277,7 +277,7 @@ float3 ColorGrade (float3 color) {
 }
 ```
 
-<img src="E:\Typora-Note\assets\color-filter.png" alt="img" style="zoom:50%;" />
+<img src=".\..\..\\Typora-Note\assets\color-filter.png" alt="img" style="zoom:50%;" />
 
 <center>Light cyan color filter, eliminating most red light.</center>
 
@@ -304,7 +304,7 @@ float3 ColorGrade (float3 color) {
 }
 ```
 
-<img src="E:\Typora-Note\assets\hue-shift.png" alt="img" style="zoom:50%;" />
+<img src=".\..\..\\Typora-Note\assets\hue-shift.png" alt="img" style="zoom:50%;" />
 
 <center>180° hue shift.</center>
 
@@ -330,7 +330,7 @@ float3 ColorGrade (float3 color) {
 }
 ```
 
-<center><img src="E:\Typora-Note\assets\saturation-minus-100.png" alt="minus 100" style="zoom:50%;" /> <img src="https://catlikecoding.com/unity/tutorials/custom-srp/color-grading/color-adjustments/saturation-plus-100.png" alt="plus 100" style="zoom:50%;" /></center>
+<center><img src=".\..\..\\Typora-Note\assets\saturation-minus-100.png" alt="minus 100" style="zoom:50%;" /> <img src="https://catlikecoding.com/unity/tutorials/custom-srp/color-grading/color-adjustments/saturation-plus-100.png" alt="plus 100" style="zoom:50%;" /></center>
 
 <center>Saturation −100 and 100.</center>
 
@@ -357,7 +357,7 @@ float3 ColorGrade (float3 color) {
 	public WhiteBalanceSettings WhiteBalance => whiteBalance;
 ```
 
-<img src="E:\Typora-Note\assets\white-balance-settings.png" alt="img" style="zoom:50%;" />
+<img src=".\..\..\\Typora-Note\assets\white-balance-settings.png" alt="img" style="zoom:50%;" />
 
 <center>White balance settings.</center>
 
@@ -407,13 +407,13 @@ float3 ColorGrade (float3 color) {
 
 冷的温度使图像变蓝，而暖的温度使图像变黄。通常使用小的调整，但我显示的是极端值，以使效果明显。
 
-<center><img src="https://catlikecoding.com/unity/tutorials/custom-srp/color-grading/more-controls/temperature-minus-100.png" alt="minus 100" style="zoom:50%;" /> <img src="E:\Typora-Note\assets\temperature-plus-100.png" alt="plus 100" style="zoom:50%;" /></center>
+<center><img src="https://catlikecoding.com/unity/tutorials/custom-srp/color-grading/more-controls/temperature-minus-100.png" alt="minus 100" style="zoom:50%;" /> <img src=".\..\..\\Typora-Note\assets\temperature-plus-100.png" alt="plus 100" style="zoom:50%;" /></center>
 
 <center>Temperature −100 and 100.</center>
 
 色调可以用来补偿不理想的色彩平衡，将图像推向绿色或洋红色。
 
-<center><img src="https://catlikecoding.com/unity/tutorials/custom-srp/color-grading/more-controls/tint-minus-100.png" alt="minus 100" style="zoom: 50%;" /> <img src="E:\Typora-Note\assets\tint-plus-100.png" alt="plus 100" style="zoom:50%;" /></center>
+<center><img src="https://catlikecoding.com/unity/tutorials/custom-srp/color-grading/more-controls/tint-minus-100.png" alt="minus 100" style="zoom: 50%;" /> <img src=".\..\..\\Typora-Note\assets\tint-plus-100.png" alt="plus 100" style="zoom:50%;" /></center>
 
 <center>Tint −100 and 100.</center>
 
@@ -443,7 +443,7 @@ float3 ColorGrade (float3 color) {
 	public SplitToningSettings SplitToning => splitToning;
 ```
 
-<img src="E:\Typora-Note\assets\split-toning-settings.png" alt="img" style="zoom:50%;" />
+<img src=".\..\..\\Typora-Note\assets\split-toning-settings.png" alt="img" style="zoom:50%;" />
 
 <center>Split toning settings.</center>
 
@@ -518,7 +518,7 @@ float t = saturate(Luminance(saturate(color)) + _SplitToningShadows.w);
 	color = SoftLight(color, highlights);
 ```
 
-<center><img src="E:\Typora-Note\assets\split-toning-blue-orange.png" alt="split toning" style="zoom:50%;" /> <img src="E:\Typora-Note\assets\without-adjustments-1678183119421-46.png" alt="neutral" style="zoom:50%;" /></center>
+<center><img src=".\..\..\\Typora-Note\assets\split-toning-blue-orange.png" alt="split toning" style="zoom:50%;" /> <img src=".\..\..\\Typora-Note\assets\without-adjustments-1678183119421-46.png" alt="neutral" style="zoom:50%;" /></center>
 
 <center>Split toning with blue and orange, and without adjustments for comparison.</center>
 
@@ -545,7 +545,7 @@ float t = saturate(Luminance(saturate(color)) + _SplitToningShadows.w);
 	public ChannelMixerSettings ChannelMixer => channelMixer;
 ```
 
-<img src="E:\Typora-Note\assets\channel-mixer-settings.png" alt="img" style="zoom:50%;" />
+<img src=".\..\..\\Typora-Note\assets\channel-mixer-settings.png" alt="img" style="zoom:50%;" />
 
 <center>Channel mixer set to identity matrix.</center>
 
@@ -592,9 +592,9 @@ float3 ColorGrade (float3 color) {
 }
 ```
 
-<img src="E:\Typora-Note\assets\mixed-channels-inspector.png" alt="inspector" style="zoom:50%;" />
+<img src=".\..\..\\Typora-Note\assets\mixed-channels-inspector.png" alt="inspector" style="zoom:50%;" />
 
-<img src="E:\Typora-Note\assets\mixed-channels-scene.png" alt="scene" style="zoom:50%;" />
+<img src=".\..\..\\Typora-Note\assets\mixed-channels-scene.png" alt="scene" style="zoom:50%;" />
 
 <center>Green split between GB and blue split between RGB.</center>
 
@@ -630,7 +630,7 @@ Unity的控件显示了色轮和可视化的区域权重，但我们将使用三
 		shadowsMidtonesHighlights;
 ```
 
-<img src="E:\Typora-Note\assets\shadows-midtones-highlights-settings.png" alt="img" style="zoom:50%;" />
+<img src=".\..\..\\Typora-Note\assets\shadows-midtones-highlights-settings.png" alt="img" style="zoom:50%;" />
 
 <center>Shadows midtones highlights settings.</center>
 
@@ -783,7 +783,7 @@ float4 ToneMappingACESPassFragment (Varyings input) : SV_TARGET {
 
 为了说明差异，这里是使用ACES色调映射与增加对比度和调整阴影、中间色调和高光的比较。
 
-<center><img src="E:\Typora-Note\assets\aces-aces.png" alt="ACES" style="zoom:50%;" /> <img src="https://catlikecoding.com/unity/tutorials/custom-srp/color-grading/more-controls/aces-linear.png" alt="linear" style="zoom:50%;" /></center>
+<center><img src=".\..\..\\Typora-Note\assets\aces-aces.png" alt="ACES" style="zoom:50%;" /> <img src="https://catlikecoding.com/unity/tutorials/custom-srp/color-grading/more-controls/aces-linear.png" alt="linear" style="zoom:50%;" /></center>
 
 <center>ACES tone mapping with color grading in ACES and linear color spaces.</center>
 
@@ -866,7 +866,7 @@ int colorLUTResolution;
 	}
 ```
 
-<img src="E:\Typora-Note\assets\color-lut-resolution.png" alt="img" style="zoom:50%;" />
+<img src=".\..\..\\Typora-Note\assets\color-lut-resolution.png" alt="img" style="zoom:50%;" />
 
 <center>Color LUT resolution.</center>
 
@@ -904,7 +904,7 @@ ToneMappingSettings.Mode mode = settings.ToneMapping.mode;
 
 我们现在绕过了<font color="RoyalBlue">color grading and tone mapping 调色和色调映射</font>，但帧调试器显示，我们在最终拷贝前画了一个扁平化的图像版本。
 
-<img src="E:\Typora-Note\assets\flattened-image.png" alt="img" style="zoom:50%;" />
+<img src=".\..\..\\Typora-Note\assets\flattened-image.png" alt="img" style="zoom:50%;" />
 
 <center>Flattened image.</center>
 
@@ -969,11 +969,11 @@ float3 GetColorGradedLUT (float2 uv, bool useACES = false) {
 		));
 ```
 
-![none](E:\Typora-Note\assets\lut-none.png)
+![none](.\..\..\\Typora-Note\assets\lut-none.png)
 
-![ACES](E:\Typora-Note\assets\lut-aces.png)
+![ACES](.\..\..\\Typora-Note\assets\lut-aces.png)
 
-![Reinhard](E:\Typora-Note\assets\lut-reinhard.png)
+![Reinhard](.\..\..\\Typora-Note\assets\lut-reinhard.png)
 
 <center>LUTs without color grading, with no, ACES, and Reinhard tone mapping.</center>
 
@@ -981,7 +981,7 @@ float3 GetColorGradedLUT (float2 uv, bool useACES = false) {
 
 我们得到的LUT矩阵是<font color="green">线性色彩空间</font>，只涵盖0-1范围。为了支持HDR，我们必须扩展这个范围。我们可以通过将输入的颜色解释为对数C空间来做到这一点。这就把范围扩大到了59以下。
 
-<img src="E:\Typora-Note\assets\linear-logc.png" alt="img" style="zoom:50%;" />
+<img src=".\..\..\\Typora-Note\assets\linear-logc.png" alt="img" style="zoom:50%;" />
 
 <center>Stored linear and Log C intensities.</center>
 
@@ -992,11 +992,11 @@ float3 GetColorGradedLUT (float2 uv, bool useACES = false) {
 }
 ```
 
-![none](E:\Typora-Note\assets\lut-logc-none.png)
+![none](.\..\..\\Typora-Note\assets\lut-logc-none.png)
 
-![ACES](E:\Typora-Note\assets\lut-logc-aces.png)
+![ACES](.\..\..\\Typora-Note\assets\lut-logc-aces.png)
 
-![Reinhard](E:\Typora-Note\assets\lut-logc-reinhard.png)
+![Reinhard](.\..\..\\Typora-Note\assets\lut-logc-reinhard.png)
 
 <center>LogC colors with no, ACES, and Reinhard tone mapping.</center>
 
@@ -1079,7 +1079,7 @@ buffer.SetGlobalVector(colorGradingLUTParametersId,
 
 <img src="https://catlikecoding.com/unity/tutorials/custom-srp/color-grading/lut/banding-16.png" alt="16" style="zoom:50%;" />
 
-<img src="E:\Typora-Note\assets\banding-32.png" alt="32" style="zoom:50%;" />
+<img src=".\..\..\\Typora-Note\assets\banding-32.png" alt="32" style="zoom:50%;" />
 
 <center>Color banding, LUT resolution 16 and 32.</center>
 
@@ -1087,7 +1087,7 @@ buffer.SetGlobalVector(colorGradingLUTParametersId,
 
 <img src="https://catlikecoding.com/unity/tutorials/custom-srp/color-grading/lut/banding-16.png" alt="16" style="zoom:50%;" />
 
-<img src="E:\Typora-Note\assets\banding-clamp-32.png" alt="32" style="zoom:50%;" />
+<img src=".\..\..\\Typora-Note\assets\banding-clamp-32.png" alt="32" style="zoom:50%;" />
 
 <center>Point sampling, LUT resolution 16 and 32.</center>
 

@@ -28,6 +28,8 @@ RenderSingleCamera->->AddRenderPasses->EnqueuePass
 
 SetupRenderPasses
 配置渲染Pass 会在 AddRenderPasses中被调用，可以在这里init参数
+// 使用脚本化渲染通行证输入的颜色参数调用配置输入（ConfigureInput）。
+            // 确保渲染传递可以使用不透明纹理。
 
 Execute
 有点像onRenderImage，似乎每帧渲染，Drew
