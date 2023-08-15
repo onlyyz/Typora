@@ -570,13 +570,13 @@ Varyings DefaultPassVertex (uint vertexID : SV_VertexID) {
 
 通过<font color="green">bilinear filtering</font>，这就是2×2像素的平均块。
 
-<img src=".\..\..\Typora-Note\assets\2x2-bilinear-downsampling.png" alt="img" style="zoom:50%;" />
+![img](https://catlikecoding.com/unity/tutorials/custom-srp/post-processing/bloom/2x2-bilinear-downsampling.png)
 
 <center>Bilinear downsampling 4×4 to 2×2.</center>
 
 这样做一次只能模糊一点。因此，我们重复这个过程，逐步降低采样，直到一个理想的水平，有效地建立一个纹理的金字塔。
 
-<img src=".\..\..\Typora-Note\assets\texture-pyramid.png" alt="img" style="zoom:50%;" />
+![img](https://catlikecoding.com/unity/tutorials/custom-srp/post-processing/bloom/texture-pyramid.png)
 
 <center>Pyramid with four textures, halving dimensions each level.</center>
 
@@ -668,7 +668,9 @@ int bloomPyramidId;
 
 我们现在模糊了很多，最终的结果几乎是一致的。你可以通过帧调试器检查中间的步骤。这些步骤作为终点显得更加有用，所以我们要让它有可能提前停止。
 
-![img](.\..\..\Typora-Note\assets\progressive-downsampling.png)
+![img](https://catlikecoding.com/unity/tutorials/custom-srp/post-processing/bloom/progressive-downsampling.png)
+
+
 
 <center>Three iterations of progressive downsampling.</center>
 
@@ -713,9 +715,10 @@ int bloomPyramidId;
 			);
 			…
 		}
+
 ```
 
-<center><img src=".\..\..\Typora-Note\assets\down-3.png" alt="3 steps" style="zoom:50%;" /> <img src=".\..\..\Typora-Note\assets\down-5.png" alt="5 steps" style="zoom:50%;" /></center>
+<center><img src="https://catlikecoding.com/unity/tutorials/custom-srp/post-processing/bloom/down-3.png" alt="3 steps" style="zoom:50%;" /><img src="https://catlikecoding.com/unity/tutorials/custom-srp/post-processing/bloom/down-5.png" alt="5 steps" style="zoom:50%;" /></center>
 
 <center>Progressive bilinear downsampling, 3 and 5 steps.</center>
 
@@ -782,8 +785,7 @@ enum Pass {
 			Draw(fromId, toId, Pass.BloomHorizontal);
 ```
 
-<center><img src=".\..\..\Typora-Note\assets\down-horizontal-3.png" alt="3 steps" style="zoom:50%;" /> <img src=".\..\..\Typora-Note\assets\down-horizontal-5.png" alt="5 steps" style="zoom:50%;" /></center>
-<center>Horizontal Gaussian, 3 and 5 steps.</center>
+<center><img src="https://catlikecoding.com/unity/tutorials/custom-srp/post-processing/bloom/down-horizontal-3.png" alt="3 steps" style="zoom:50%;" /><img src="https://catlikecoding.com/unity/tutorials/custom-srp/post-processing/bloom/down-horizontal-5.png" alt="5 steps" style="zoom:50%;" /></center>
 
 在这一点上，结果显然是水平拉伸的，但它看起来很有希望。我们可以通过复制<font color="DarkOrchid ">BloomHorizontalPassFragment</font>，重命名它，并从行切换到列来创建垂直通道。我们在第一次传递中降低了采样率，但这次我们保持相同的尺寸来完成<font color="RoyalBlue">Gaussian filter</font>，所以文本大小的偏移不应该是双倍的。
 
@@ -822,7 +824,9 @@ float4 BloomVerticalPassFragment (Varyings input) : SV_TARGET {
 
 在<font color="red">DoBloom</font>中，<font color="DarkOrchid "> destination identifier</font>现在必须从高处开始，在每个<font color="green">downsampling step</font>步骤后增加两个。然后中间的纹理可以放在中间。水平绘制到中间，接着是垂直绘制到目的地。我们还必须释放额外的纹理，最简单的方法是从最后一个金字塔源头开始倒退。
 
-<img src=".\..\..\Typora-Note\assets\hv-downsamling.png" alt="img" style="zoom:50%;" />
+<img src="https://catlikecoding.com/unity/tutorials/custom-srp/post-processing/bloom/hv-downsamling.png" alt="img" style="zoom:50%;" />
+
+
 
 <center>Horizontal to next level, vertical at same level.</center>
 
@@ -885,7 +889,7 @@ float4 BloomVerticalPassFragment (Varyings input) : SV_TARGET {
 
 使用<font color="DarkOrchid ">bloom</font>金字塔的顶部作为最终图像，可以产生一个统一的混合，看起来不像是有什么东西在发光。我们可以通过对金字塔向下逐步<font color="red">upsampling</font>，将所有级别的图像累积到一个单一的图像中，来获得所需的结果。
 
-<img src=".\..\..\Typora-Note\assets\additive-progressive-upsampling.png" alt="img" style="zoom:50%;" />
+<img src="https://catlikecoding.com/unity/tutorials/custom-srp/post-processing/bloom/additive-progressive-upsampling.png" alt="img" style="zoom:50%;" />
 
 <center>Additive progressive upsampling, reusing textures.</center>
 
