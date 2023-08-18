@@ -1005,7 +1005,7 @@ for (i -= 1; i > 0; i--) {
 
 虽然高斯滤波产生了平滑的结果，但我们在上采样时仍然进行了双线性滤波，这可能会使发光体出现块状的外观。这在原始图像收缩率高的地方最为明显，特别是在运动时。
 
-<img src=".\..\..\Typora-Note\assets\upsampling-bilinear.png" alt="img" style="zoom:50%;" />
+<img src="https://catlikecoding.com/unity/tutorials/custom-srp/post-processing/bloom/upsampling-bilinear.png" alt="img" style="zoom:50%;" />
 
 <center>White glow on black background appears blocky.</center>
 
@@ -1036,7 +1036,7 @@ float4 BloomCombinePassFragment (Varyings input) : SV_TARGET {
 }
 ```
 
-<img src=".\..\..\Typora-Note\assets\upsampling-bicubic.png" alt="img" style="zoom:50%;" />
+<img src="https://catlikecoding.com/unity/tutorials/custom-srp/post-processing/bloom/upsampling-bicubic.png" alt="img" style="zoom:50%;" />
 
 <center>Bicubic upsampling yields smoother glow.</center>
 
@@ -1064,7 +1064,7 @@ float4 BloomCombinePassFragment (Varyings input) : SV_TARGET {
 		public bool bicubicUpsampling;
 ```
 
-<img src=".\..\..\Typora-Note\assets\bicubic-upsampling-toggle.png" alt="img" style="zoom:50%;" />
+![img](https://catlikecoding.com/unity/tutorials/custom-srp/post-processing/bloom/bicubic-upsampling-toggle.png)
 
 <center>Bicubic upsampling toggle.</center>
 
@@ -1147,13 +1147,13 @@ RenderTextureFormat format = RenderTextureFormat.Default;
 
 我们不能突然从效果中消除颜色，因为这将引入尖锐的边界，而在这里预期会有一个渐进的过渡。我们将颜色乘以权重
 
- ![CodeCogsEqn (1)](.\..\..\Typora-Note\assets\CodeCogsEqn (1).gif)
+<img src="https://catlikecoding.com/unity/tutorials/custom-srp/post-processing/bloom/threshold-graph.png" alt="img" style="zoom:50%;" />
 
 其中<font color="RoyalBlue">b是亮度，t是计算的阈值</font>。我们将使用最大的颜色的RGB的通道B，当阈值为0时，结果总是1，这使颜色保持不变。随着阈值的增加，权重曲线将向下弯曲，从而变为零，在<font color="red"> b≤t</font>时候
 
 由于曲线的形状，它被称为膝盖曲线。
 
-<img src=".\..\..\Typora-Note\assets\threshold-graph.png" alt="img" style="zoom:50%;" />
+
 
 <center>Thresholds 0.25, 0.5, 0.75, and 1.</center>
 
