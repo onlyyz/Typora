@@ -134,5 +134,7 @@ git push origin main/master
 ```c++
 git submodule add "URLpath" "filePath"
 example:E:\dev\Hazel>git submodule add https://github.com/gabime/spdlog.git Hazel/vendor/spdlog
+
+E:\Item\Resource>git submodule add http://192.168.8.104:3300/Art_Resource/Model.git E:\Item\Resource\Model
 ```
 
