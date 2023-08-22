@@ -4,7 +4,7 @@
 		复制多个URP/HDRP颜色分级工具。
 		使用颜色LUT。
 
-![img](./../../Typora-Note/assets/tutorial-image-1678182228761-1.jpg)
+![img](https://catlikecoding.com/unity/tutorials/custom-srp/color-grading/tutorial-image.jpg)
 
 <center>Tweaking colors to create a mood.</center>
 
@@ -114,7 +114,7 @@ public class PostFXSettings : ScriptableObject {
 
 URP和HDRP的调色功能是相同的。我们将为调色添加相同的配置选项，顺序相同。首先是 "曝光后"，一个不受约束的浮点。之后是对比度，一个从-100到100的滑块。下一个选项是滤色器，这是一个没有阿尔法的HDR颜色。接下来是色相偏移，另一个滑块，但从-180°到+180°。最后一个选项是饱和度，同样是一个从-100到100的滑块。
 
-```
+```C#
 public struct ColorAdjustmentsSettings {
 
 		public float postExposure;
@@ -141,7 +141,7 @@ public struct ColorAdjustmentsSettings {
 	};
 ```
 
-<img src=".\..\..\\Typora-Note\assets\settings.png" alt="img" style="zoom:50%;" />
+<img src="https://catlikecoding.com/unity/tutorials/custom-srp/color-grading/color-adjustments/settings.png" alt="img" style="zoom:50%;" />
 
 <center>Settings for color adjustments.</center>
 
@@ -212,7 +212,7 @@ float3 ColorGrade (float3 color) {
 }
 ```
 
-<center><img src=".\..\..\\Typora-Note\assets\post-exposure-minus-2.png" alt="minus 2" style="zoom:50%;" /> <img src=".\..\..\\Typora-Note\assets\post-exposure-plus-2.png" alt="plus 2" style="zoom:50%;" /></center>
+<center><img src="https://catlikecoding.com/unity/tutorials/custom-srp/color-grading/color-adjustments/post-exposure-minus-2.png" alt="minus 2" style="zoom: 50%;" /><img src="https://catlikecoding.com/unity/tutorials/custom-srp/color-grading/color-adjustments/post-exposure-plus-2.png" alt="plus 2" style="zoom:50%;" /></center>
 
 <center>Post exposure −2 and 2.</center>
 
@@ -243,7 +243,7 @@ float3 ColorGradingContrast (float3 color) {
 }
 ```
 
-<img src=".\..\..\\Typora-Note\assets\logc.png" alt="minus 50" style="zoom:50%;" />
+<img src="https://catlikecoding.com/unity/tutorials/custom-srp/color-grading/color-adjustments/logc.png" alt="minus 50" style="zoom:50%;" />
 
 <center>Linear and Log C.</center>
 
@@ -443,7 +443,7 @@ float3 ColorGrade (float3 color) {
 	public SplitToningSettings SplitToning => splitToning;
 ```
 
-<img src=".\..\..\\Typora-Note\assets\split-toning-settings.png" alt="img" style="zoom:50%;" />
+<img src="https://catlikecoding.com/unity/tutorials/custom-srp/color-grading/more-controls/split-toning-settings.png" alt="img" style="zoom:50%;" />
 
 <center>Split toning settings.</center>
 
@@ -518,7 +518,7 @@ float t = saturate(Luminance(saturate(color)) + _SplitToningShadows.w);
 	color = SoftLight(color, highlights);
 ```
 
-<center><img src=".\..\..\\Typora-Note\assets\split-toning-blue-orange.png" alt="split toning" style="zoom:50%;" /> <img src=".\..\..\\Typora-Note\assets\without-adjustments-1678183119421-46.png" alt="neutral" style="zoom:50%;" /></center>
+<center><img src="https://catlikecoding.com/unity/tutorials/custom-srp/color-grading/more-controls/split-toning-blue-orange.png" alt="split toning" style="zoom:50%;" /><img src="https://catlikecoding.com/unity/tutorials/custom-srp/color-grading/color-adjustments/without-adjustments.png" alt="neutral" style="zoom:50%;" /></center>
 
 <center>Split toning with blue and orange, and without adjustments for comparison.</center>
 
@@ -545,7 +545,7 @@ float t = saturate(Luminance(saturate(color)) + _SplitToningShadows.w);
 	public ChannelMixerSettings ChannelMixer => channelMixer;
 ```
 
-<img src=".\..\..\\Typora-Note\assets\channel-mixer-settings.png" alt="img" style="zoom:50%;" />
+<img src="https://catlikecoding.com/unity/tutorials/custom-srp/color-grading/more-controls/channel-mixer-settings.png" alt="img" style="zoom:50%;" />
 
 <center>Channel mixer set to identity matrix.</center>
 
@@ -592,9 +592,9 @@ float3 ColorGrade (float3 color) {
 }
 ```
 
-<img src=".\..\..\\Typora-Note\assets\mixed-channels-inspector.png" alt="inspector" style="zoom:50%;" />
+<img src="https://catlikecoding.com/unity/tutorials/custom-srp/color-grading/more-controls/mixed-channels-inspector.png" alt="inspector" style="zoom:50%;" />
 
-<img src=".\..\..\\Typora-Note\assets\mixed-channels-scene.png" alt="scene" style="zoom:50%;" />
+<img src="https://catlikecoding.com/unity/tutorials/custom-srp/color-grading/more-controls/mixed-channels-scene.png" alt="scene" style="zoom:50%;" />
 
 <center>Green split between GB and blue split between RGB.</center>
 
@@ -630,7 +630,7 @@ Unity的控件显示了色轮和可视化的区域权重，但我们将使用三
 		shadowsMidtonesHighlights;
 ```
 
-<img src=".\..\..\\Typora-Note\assets\shadows-midtones-highlights-settings.png" alt="img" style="zoom:50%;" />
+<img src="https://catlikecoding.com/unity/tutorials/custom-srp/color-grading/more-controls/shadows-midtones-highlights-settings.png" alt="img" style="zoom:50%;" />
 
 <center>Shadows midtones highlights settings.</center>
 
@@ -866,7 +866,7 @@ int colorLUTResolution;
 	}
 ```
 
-<img src=".\..\..\\Typora-Note\assets\color-lut-resolution.png" alt="img" style="zoom:50%;" />
+<img src="https://catlikecoding.com/unity/tutorials/custom-srp/color-grading/lut/color-lut-resolution.png" alt="img" style="zoom:50%;" />
 
 <center>Color LUT resolution.</center>
 
@@ -904,7 +904,7 @@ ToneMappingSettings.Mode mode = settings.ToneMapping.mode;
 
 我们现在绕过了<font color="RoyalBlue">color grading and tone mapping 调色和色调映射</font>，但帧调试器显示，我们在最终拷贝前画了一个扁平化的图像版本。
 
-<img src=".\..\..\\Typora-Note\assets\flattened-image.png" alt="img" style="zoom:50%;" />
+![img](https://catlikecoding.com/unity/tutorials/custom-srp/color-grading/lut/flattened-image.png)
 
 <center>Flattened image.</center>
 
