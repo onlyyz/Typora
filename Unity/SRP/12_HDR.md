@@ -5,7 +5,7 @@
 		增加散射光斑。
 		支持多种色调映射模式。
 
-![img](E:\Typora file\SRP\assets\tutorial-image-1677837398280-119.jpg)
+![img](https://catlikecoding.com/unity/tutorials/custom-srp/hdr/tutorial-image.jpg)
 
 <center>A combination of dark, bright, and very bright areas.</center>
 
@@ -21,13 +21,15 @@
 
 HDR渲染需要HDR渲染目标。这不仅适用于普通相机，也适用于<font color="green">reflection probes</font>。<font color="green">reflection probes</font>是否包含HDR或LDR数据可以通过其HDR切换选项来控制，该选项默认是启用的。
 
-<img src="E:\Typora file\SRP\assets\reflection-probe-hdr.png" alt="img" style="zoom:50%;" />
+<img src="https://catlikecoding.com/unity/tutorials/custom-srp/hdr/high-dynamic-range/reflection-probe-hdr.png" alt="img" style="zoom:50%;" />
 
 <center>Reflection probe with HDR enabled.</center>
 
 当反射探头使用HDR时，它可以包含高强度的颜色，这主要是它捕获的镜面反射。你可以通过它们在场景中引起的反射间接地观察它们。不完美的反射削弱了探头的颜色，这使得HDR值突出。
 
-<center><img src="E:\Typora file\SRP\assets\reflections-with-hdr.png" alt="with" style="zoom:50%;" /> <img src="E:\Typora file\SRP\assets\reflections-without-hdr.png" alt="without" style="zoom:50%;" /></center>
+```html
+<center>![with](https://catlikecoding.com/unity/tutorials/custom-srp/hdr/high-dynamic-range/reflections-with-hdr.png)![without](https://catlikecoding.com/unity/tutorials/custom-srp/hdr/high-dynamic-range/reflections-without-hdr.png)</center>
+```
 
 <center>Reflections with and without HDR.</center>
 
@@ -35,7 +37,7 @@ HDR渲染需要HDR渲染目标。这不仅适用于普通相机，也适用于<f
 
 相机也有HDR配置选项，但它本身没有任何功能。它可以设置为关闭或使用图形设置。
 
-<img src="E:\Typora file\SRP\assets\camera-hdr-1678034758365-11.png" alt="img" style="zoom:50%;" />
+![img](https://catlikecoding.com/unity/tutorials/custom-srp/hdr/high-dynamic-range/camera-hdr.png)
 
 <center>Camera HDR depending on graphics settings.</center>
 
@@ -576,7 +578,7 @@ float4 BloomScatterFinalPassFragment (Varyings input) : SV_TARGET {
 	public ToneMappingSettings ToneMapping => toneMapping;
 ```
 
-<img src="E:\Typora file\SRP\assets\tone-mapping-mode.png" alt="img" style="zoom:50%;" />
+![img](https://catlikecoding.com/unity/tutorials/custom-srp/hdr/tone-mapping/tone-mapping-mode.png)
 
 <center>Tone mapping mode set to none.</center>
 
@@ -618,8 +620,7 @@ float4 ToneMappingReinhardPassFragment (Varyings input) : SV_TARGET {
 }
 ```
 
-<center><img src="E:\Typora file\SRP\assets\bloom-additive-1677838725340-177.png" alt="additive" style="zoom:50%;" /> <img src="E:\Typora file\SRP\assets\bloom-scattering-1677838725340-179.png" alt="scattering" style="zoom:50%;" /></center>
-<center><img src="E:\Typora file\SRP\assets\reinhard-additive.png" alt="reinhard additive" style="zoom:50%;" /> <img src="E:\Typora file\SRP\assets\reinhard-scattering.png" alt="reinhard scattering" style="zoom:50%;" /></center>
+<center><img src="https://catlikecoding.com/unity/tutorials/custom-srp/hdr/tone-mapping/bloom-additive.png" alt="additive" style="zoom:50%;" /><img src="https://catlikecoding.com/unity/tutorials/custom-srp/hdr/tone-mapping/bloom-scattering.png" alt="scattering" style="zoom:50%;" /></center>
 
 <center>Top no tone mapping, bottom Reinhard, both with additive and scattering bloom.</center>
 
@@ -640,7 +641,7 @@ float4 ToneMappingReinhardPassFragment (Varyings input) : SV_TARGET {
 
 其中w 是白颜色的点
 
-<img src="E:\Typora file\SRP\assets\adjusted-reinhard-graph.png" alt="img" style="zoom: 33%;" />
+<img src="https://catlikecoding.com/unity/tutorials/custom-srp/hdr/tone-mapping/adjusted-reinhard-graph.png" alt="img" style="zoom: 33%;" />
 
 <center>Reinhard with white point at infinity and 4.</center>
 
@@ -653,7 +654,7 @@ C是输入的颜色通道,<font color="RoyalBlue"> **e** an exposure bias, and *
 
 上述函数是由John Hable设计的。它首次被用于《解忧杂货店》（Uncharted 2）（见幻灯片142和143）。
 
-<img src="E:\Typora file\SRP\assets\uncharted2-graph.png" alt="img" style="zoom: 33%;" />
+<img src="https://catlikecoding.com/unity/tutorials/custom-srp/hdr/tone-mapping/uncharted2-graph.png" alt="img" style="zoom:33%;" />
 
 <center>Reinhard and Uncharted 2 tone mapping.</center>
 
@@ -661,7 +662,7 @@ C是输入的颜色通道,<font color="RoyalBlue"> **e** an exposure bias, and *
 
 这导致有效<font color="DarkOrchid ">white point</font>大约为4.035。它用于<font color="red">neutral tone mapping</font>选项，可以通过<font color="RoyalBlue">*Color* Core Library HLSL file</font>中的<font color="red">NeutralTonemap</font>函数获得。
 
-<img src="E:\Typora file\SRP\assets\reinhard-neutral-graph.png" alt="img" style="zoom:25%;" />
+<img src="https://catlikecoding.com/unity/tutorials/custom-srp/hdr/tone-mapping/reinhard-neutral-graph.png" alt="img" style="zoom:33%;" />
 
 <center>Reinhard white point infinite and 4, and neutral tone mapping.</center>
 
