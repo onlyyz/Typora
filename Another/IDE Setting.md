@@ -8,7 +8,7 @@ Output Directory	$(SolutionDir)\bin\$(Platform)\$(Configuration)
 Intermediate Directory	$(SolutionDir)\bin\intermediates\$(Platform)\$(Configuration)
 ```
 
-![image-20230715124844116](E:/dev/Typora-Note/Another/IDE%20Setting.assets/image-20230715124844116.png)
+![image-20230715124844116](./assets/image-20230715124844116.png)
 
 #### 2、glfw Library link
 
@@ -17,11 +17,11 @@ GLFW			$(SolutionDir)Dependencies\GLFW\include
 LINK    			$(SolutionDir)Dependencies\GLFW\lib-vc2022
 ```
 
-![image-20230715224203232](E:/dev/Typora-Note/Another/IDE%20Setting.assets/image-20230715224203232.png)
+![image-20230715224203232](./assets/image-20230715224203232.png)
 
-![image-20230715130107019](E:/dev/Typora-Note/Another/IDE%20Setting.assets/image-20230715130107019.png)
+![image-20230715130107019](./assets/image-20230715130107019.png)
 
-![image-20230715130208971](E:/dev/Typora-Note/Another/IDE%20Setting.assets/image-20230715130208971.png)
+![image-20230715130208971](./assets/image-20230715130208971.png)
 
 #### 3、GLM
 
@@ -29,13 +29,13 @@ LINK    			$(SolutionDir)Dependencies\GLFW\lib-vc2022
 $(SolutionDir)Dependencies\GLM\glm
 ```
 
-![image-20230715225130652](E:/dev/Typora-Note/Another/IDE%20Setting.assets/image-20230715225130652.png)
+![image-20230715225130652](./assets/image-20230715225130652.png)
 
 #### 4、dll 32位
 
 修改启动项
 
-![image-20230728094820184](E:/dev/Typora-Note/Another/IDE%20Setting.assets/image-20230728094820184.png)
+![image-20230728094820184](./assets/image-20230728094820184.png)
 
 
 
