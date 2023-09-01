@@ -181,3 +181,303 @@ this.AddManipulator(new RectangleSelector());
 <center>Window get some Manipulator </center>
 
 ###  三、 Create Node
+
+#### 3.1 Port 端口
+
+这一步是创建要放置在已创建的 GraphView 上的节点。这也是我们目的，首先创建一个节点类，它继承与<font color=#4db8ff>Node Class</font>，命名为<font color=#4db8ff>MessageNode</font>
+
+```C#
+using UnityEngine;
+using UnityEngine.UIElements;
+using UnityEditor.Experimental.GraphView;
+
+public class MessageNode : Node
+{}
+```
+
+将它加入<font color=#FFCE70>Render Graph</font>中
+
+```c++
+//节点加入
+this.Add(new MessageNode());
+```
+
+![image-20230901232524378](./assets/image-20230901232524378.png)
+
+<center>有节点的Render Graph</center>
+
+#### 3.2 input output
+
+数据需要输入输出，所以我们创建两个<font color=#FFCE70>Port</font>，作为输入入口和输出入口，为了在调用该类的时候就自动初始化生成，因此我们可以利用<font color="red">构造函数</font>
+
+```c++
+public class MessageNode : Node
+{
+    public MessageNode()
+    {
+        var inputPort = Port;
+        var outputOort = Port;
+    }
+}
+```
+
+可以利用它的<font color=#66ff66>Create</font>方法进行设置，需要三个参数分别是，<font color=#bc8df9>定位，类型，容量，数据类型</font>，我们分别是<font color=#66ff66>水平，输入输出，多和少，数据类型为<font color="red">Port</font></font>
+
+```C#
+var inputPort = Port.Create<Edge>(Orientation.Horizontal, Direction.Input, Port.Capacity.Multi, typeof(Port));
+
+
+var outputOort = Port.Create<Edge>(Orientation.Horizontal, Direction.Output, Port.Capacity.Single, typeof(Port));
+}
+```
+
+<font color=#4db8ff>Port ：</font>https://docs.unity3d.com/ScriptReference/Experimental.GraphView.Port.html
+
+我们需要给每个端口命名，分别将他们加入<font color=#FFCE70>Node</font>的不同的端口容器中
+
+<font color=#4db8ff>Node link：</font>https://docs.unity3d.com/ScriptReference/Experimental.GraphView.Node.html
+
+```c#
+var inputPort = Port.Create<Edge>(Orientation.Horizontal, Direction.Input, Port.Capacity.Multi, typeof(Port));
+inputPort.portName = "In";
+inputContainer.Add(inputPort);
+
+var outputOort = Port.Create<Edge>(Orientation.Horizontal, Direction.Output, Port.Capacity.Single, typeof(Port));
+outputOort.portName = "Out";
+outputContainer.Add(outputOort);
+```
+
+![image-20230901233420726](./assets/image-20230901233420726.png)
+
+<center>In and out  of Port</center>
+
+我们暂时不知道添加什么，我们可以在<font color="red">Container</font>容器里标记一些文本，首先创建一个文本字段，并且允许多行输入。
+
+<font color=#4db8ff>TextField link：</font>https://docs.unity3d.com/ScriptReference/UIElements.TextField.html
+
+```c++
+public class MessageNode : Node
+{
+    private TextField textField;
+    public MessageNode()
+    {
+        ...
+        textField = new TextField();
+        textField.multiline = true;
+    }
+}
+```
+
+#### 3.3  IME（Input method）
+
+随后是IME 输入法支持，可以生成生成输入设备上没有的字符。最后将它加入主容器中，利用的是<font color=#bc8df9>textField</font>的回调函数以及<font color="red">lambda</font>表达式
+
+```c#
+using UnityEngine;
+using UnityEngine.UIElements;
+using UnityEditor.Experimental.GraphView;
+
+public class MessageNode : Node
+{
+    private TextField textField;
+
+    public MessageNode()
+    {
+        // 给节点加标题。
+        this.title = "Message";
+
+        // 创建端口（见下文）
+        var inputPort = Port.Create<Edge>(Orientation.Horizontal, Direction.Input, Port.Capacity.Multi, typeof(Port));
+        inputPort.portName = "In";
+        inputContainer.Add(inputPort);
+
+        var outputOort = Port.Create<Edge>(Orientation.Horizontal, Direction.Output, Port.Capacity.Single, typeof(Port));
+        outputOort.portName = "Out";
+        outputContainer.Add(outputOort);
+
+        // 在节点的主要部分添加输入字段
+        textField = new TextField();
+        // 在节点的主要部分添加输入字段
+        textField.multiline = true;
+        //支持日文输入
+        textField.RegisterCallback<FocusInEvent>(evt => { Input.imeCompositionMode = IMECompositionMode.On; });
+        textField.RegisterCallback<FocusOutEvent>(evt => { Input.imeCompositionMode = IMECompositionMode.Auto; });
+
+        this.mainContainer.Add(textField);
+    }
+}
+```
+
+### 四、Editor Node
+
+首选，要创建一个右键单击 ShaderGraph 时出现的东西。这将在 ScriptGraphView 一侧生成和设置
+
+让我们创建一个新的Code 名字为<font color=#bc8df9>ScriptGraphSearchWindowProvider</font>
+
+#### 4.1 Search Tree
+
+搜索树条目，可以继承<font color=#bc8df9>ISearchWindowProvider</font>。搜索窗口在 GraphView 中显示搜索树条目。
+
+他有两个基本方法，接口需要实现两个基本函数方法需要实现
+
+```c#
+public interface ISearchWindowProvider
+{
+    //生成数据以填充搜索窗口，搜索窗口首次打开和重新加载时都会调用该方法
+    List<SearchTreeEntry>CreateSearchTree(SearchWindowContext context{}
+    //在搜索树列表中选择一个条目
+    bool OnSelectEntry(SearchTreeEntry SearchTreeEntry, SearchWindowContext context){}
+}
+```
+
+<font color=#bc8df9>CreateSearchTree</font>：创建一个搜索树，随后设置以及自定义节点
+
+```c#
+public List<SearchTreeEntry> CreateSearchTree(SearchWindowContext context)
+{
+    var entries = new List<SearchTreeEntry>();
+    return entries;
+}
+```
+
+选择鼠标右键，点击Create Node，Unity会弹出错误。
+
+<img src="./assets/image-20230902014951758.png" alt="image-20230902014951758" style="zoom:50%;" />
+
+<center>Bug提示Index索引不到array</center>
+
+我们创建一个搜索树组条目，命名为<font color=#FFCE70>Create Custom Node</font>
+
+```c#
+entries.Add(new SearchTreeGroupEntry(new GUIContent("Create Custom Node")));
+```
+
+<img src="./assets/image-20230902015348272.png" alt="image-20230902015348272" style="zoom:50%;" />
+
+#### 4.2 Node Level
+
+但是现在没有一个可以创建<font color=#bc8df9>Node</font>，可以使用函数<font color=#66ff66>SearchTreeEntry</font>，有四个参数<font color=#66ff66>条目文本Icon，搜索树级别，指定对象用于搜索树条目</font>
+
+<font color=#4db8ff>Link：</font>https://docs.unity3d.com/ScriptReference/Experimental.GraphView.SearchTreeEntry.html
+
+```C#
+public List<SearchTreeEntry> CreateSearchTree(SearchWindowContext context)
+{
+    var entries = new List<SearchTreeEntry>();
+
+    //节点名字
+    entries.Add(new SearchTreeGroupEntry(new GUIContent("Create Custom Node")));
+    entries.Add(new SearchTreeEntry(new GUIContent(nameof(MessageNode)))
+                {
+                    level = 1, userData = typeof(MessageNode)
+                });
+
+    return entries;
+}
+
+public bool OnSelectEntry(SearchTreeEntry SearchTreeEntry, SearchWindowContext context)
+{
+    return true;
+}
+```
+
+<img src="./assets/image-20230902020316610.png" alt="image-20230902020316610" style="zoom:50%;" />
+
+<center>Message Node Level</center>
+
+#### 4.3 Node Create
+
+我们创建了层级，但是看不见实际的节点，所以我们设想一下创建一个节点需要怎样的数据
+
+>   （1）节点数据
+>
+>   （2） 创建节点实例，数据填充到实例
+>
+>   （3）节点在鼠标位置创建
+>
+>   （4）添加到Graph View 建立链接
+
+```c#
+//节点数据
+var type = SearchTreeEntry.userData as Type;
+//填充到实例
+var node = Activator.CreateInstance(type) as Node;
+```
+
+我们可以使用<font color=#FFCE70>Activator</font>将数据类型实例转化为<font color="red">Node</font>
+
+<font color=#66ff66>type instantiation</font>将使用 <font color="red">Activator</font>来完成。
+
+<font color=#4db8ff>Activator：</font>https://docs.unity3d.com/ScriptReference/Unity.Properties.InstantiationKind.Activator.html
+
+<img src="./assets/image-20230902022022489.png" alt="image-20230902022022489" style="zoom:50%;" />
+
+<center>Create Node</center>
+
+#### 4.4 Node Position
+
+现在节点创建的位置比较随机，有点难找，我们让节点创建在鼠标位置，我们可以通过获取我们节点窗口，随后判断鼠标的位置。
+
+我们首先需要将搜索树空间<font color=#bc8df9>SearchWindowContext</font>的点，转到<font color=#bc8df9>ScriptGraphWindow</font>空间，随后转到<font color=#66ff66>ScriptGraphView</font>空间
+
+可以利用<font color=#66ff66>ChangeCoordinatesTo</font>，将空间转换，查看函数的源码我们可以发现，他的三个参数，但是第一个参数已经被赋值，我们只需要关于后面两个参数。
+
+![image-20230902023659643](./assets/image-20230902023659643.png)
+
+<font color=#4db8ff>ChangeCoordinatesTo Link：</font>https://docs.unity3d.com/ScriptReference/UIElements.VisualElementExtensions.ChangeCoordinatesTo.html
+
+目标空间是：<font color=#66ff66>ScriptGraphWindow</font>，我们可以通过<font color="red">VisualElement.parent</font>，这个实际上是返回的是本身的一个<font color=#66ff66>子级</font>。
+
+
+
+<font color=#4db8ff>VisualElement Link：</font>https://docs.unity3d.com/ScriptReference/UIElements.VisualElement.html
+
+我们首先获得当前鼠标的位置，可以利用<font color=#66ff66>screenMousePosition</font>方法的参数<font color=#bc8df9>context</font>，其中它包含一个组件<font color=#4db8ff>screenMousePosition</font>，可以获得当前鼠标的位置。
+
+```c#
+//节点数据
+var type = SearchTreeEntry.userData as Type;
+//数据填充到实例
+var node = Activator.CreateInstance(type) as Node;
+
+// 创建节点的位置与鼠标坐标一致。 
+var worldMousePosition = _window.rootVisualElement.ChangeCoordinatesTo(_window.rootVisualElement.parent,context.screenMousePosition);
+```
+
+但是创建了以后，我们并不能在<font color=#bc8df9>ScriptGraphSearchWindow</font>中找到该节点
+
+<img src="./assets/image-20230902030458107.png" alt="image-20230902030458107" style="zoom:50%;" />
+
+<center>失去节点</center>
+
+如果使用<font color=#bc8df9>ScriptGraphWindow</font>的鼠标位置
+
+```c#
+// 创建节点的位置与鼠标坐标一致。 
+var worldMousePosition = _window.rootVisualElement.ChangeCoordinatesTo(_window.rootVisualElement.parent, _window.position.position);
+```
+
+也依然找不到节点
+
+我们可以将两个位置作差，就可以获得相对鼠标较近的位置
+
+并且将点转移到<font color=#bc8df9>ScriptGraphView</font>空间
+
+```c#
+// 创建节点的位置与鼠标坐标一致。 
+var worldMousePosition = _window.rootVisualElement.ChangeCoordinatesTo(_window.rootVisualElement.parent,context.screenMousePosition - _window.position.position);
+var localMousePosition = _graphView.contentViewContainer.WorldToLocal(worldMousePosition);
+```
+
+随后设置该节点的<font color=#4db8ff>Position，Size</font>
+
+```c++
+node.SetPosition(new Rect(localMousePosition, new Vector2(100, 100)));
+```
+
+<img src="./assets/image-20230902031423683.png" alt="image-20230902031423683" style="zoom: 67%;" />
+
+<center>Node</center>
+
+### 五、Node Link
+
