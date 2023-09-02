@@ -459,7 +459,7 @@ var worldMousePosition = _window.rootVisualElement.ChangeCoordinatesTo(_window.r
 
 也依然找不到节点
 
-我们可以将两个位置作差，就可以获得相对鼠标较近的位置
+我们可以将两个位置作差，就可以获得相对鼠标较近的位置， 应该是做坐标修正吧 获取在屏幕像素坐标下相对于窗口的实际位置
 
 并且将点转移到<font color=#bc8df9>ScriptGraphView</font>空间
 
