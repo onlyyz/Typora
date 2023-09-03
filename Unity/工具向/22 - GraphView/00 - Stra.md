@@ -340,6 +340,20 @@ public List<SearchTreeEntry> CreateSearchTree(SearchWindowContext context)
 }
 ```
 
+要将他加入<font color=#bc8df9>GraphView</font>中，首先是创建一个搜索树脚本实例，随后，初始化它，将它加入
+
+通过初始化函数<font color=#66ff66>Init</font>，我们可以一路持有<font color=#bc8df9>ScriptGraphView</font>和<font color=#bc8df9>ScriptGraphWindow</font>
+
+```c#
+var searchWindowProvider = ScriptableObject.CreateInstance<ScriptGraphSearchWindowProvider>();
+//传递
+searchWindowProvider.Init(this, window);
+this.nodeCreationRequest += context =>
+{
+    SearchWindow.Open(new SearchWindowContext(context.screenMousePosition), searchWindowProvider);
+};
+```
+
 选择鼠标右键，点击Create Node，Unity会弹出错误。
 
 <img src="./assets/image-20230902014951758.png" alt="image-20230902014951758" style="zoom:50%;" />
@@ -459,9 +473,13 @@ var worldMousePosition = _window.rootVisualElement.ChangeCoordinatesTo(_window.r
 
 也依然找不到节点
 
-我们可以将两个位置作差，就可以获得相对鼠标较近的位置， 应该是做坐标修正吧 获取在屏幕像素坐标下相对于窗口的实际位置
 
-并且将点转移到<font color=#bc8df9>ScriptGraphView</font>空间
+
+我们可以将两个位置作差，就可以获得相对鼠标较近的位置，<font color=#4db8ff>由鼠标位置减去窗口位置，算出来鼠标相对窗口的偏移值</font> ，做坐标修正。其中窗口位置是（0,0）
+
+![img](https://docs.unity3d.com/StaticFiles/ScriptRefImages/RectXY.svg)
+
+获取在屏幕像素坐标下相对于窗口的实际位置，并且将点转移到<font color=#bc8df9>ScriptGraphView</font>空间
 
 ```c#
 // 创建节点的位置与鼠标坐标一致。 
@@ -479,5 +497,71 @@ node.SetPosition(new Rect(localMousePosition, new Vector2(100, 100)));
 
 <center>Node</center>
 
-### 五、Node Link
+### 五、Base  Class
+
+每次添加Node都要通过以下代码，很麻烦。我们可以创建一个基类，去节省操作
+
+```c#
+entries.Add(new SearchTreeEntry(new GUIContent(nameof(MessageNode))) { level = 1, userData = typeof(MessageNode)});
+```
+
+#### 5.1 Inherit Node
+
+```c#
+using System.Collections;
+using System.Collections.Generic;
+using UnityEditor.Experimental.GraphView;
+using UnityEngine;
+
+public class ScriptGraphNode : Node {}
+```
+
+修改<font color=#66ff66>MessageNode </font>中的代码，让它继承<font color=#4db8ff>ScriptGraphNode</font>
+
+```c++
+public class MessageNode : ScriptGraphNode
+{
+    // 省略
+}
+```
+
+#### 5.2 AppDomain
+
+AppDomain在同一个进程内划分出多个"域",一个进程可以运行多个应用,提高了资源的复用性,数据通信
+
+CLR在启动的时候会创建<font color=#4db8ff>系统域(System Domain)、共享域(Shared Domain)和默认域(Default Domain)</font>、<font color=#FFCE70>系统域与共享域</font>对于用户是不可见的
+
+<font color=#66ff66>默认域</font>也可以说是当前域,它承载了当前应用程序的各类信息(堆栈),所以,我们的一切操作都是在这个默认域上进行."插件式"开发很大程度上就是依靠AppDomain来进行.
+
+<font color=#4db8ff>AppDomain Link：</font>https://learn.microsoft.com/en-us/dotnet/api/system.appdomain?view=net-7.0
+
+
+
+```c#
+public List<SearchTreeEntry> CreateSearchTree(SearchWindowContext context)
+{
+    var entries = new List<SearchTreeEntry>();
+    entries.Add(new SearchTreeGroupEntry(new GUIContent("Create Node")));
+
+    foreach (var assembly in AppDomain.CurrentDomain.GetAssemblies())
+    {
+        foreach (var type in assembly.GetTypes())
+        {
+            if (type.IsClass == false) continue;
+
+            if (type.IsAbstract) continue;
+
+            if (type.IsSubclassOf(typeof(ScriptGraphNode)) == false) continue;
+
+            entries.Add(new SearchTreeEntry(new GUIContent(type.Name)) { level = 1, userData = type });
+        }
+    }
+
+    return entries;
+}
+```
+
+继承自 <font color=#66ff66>ScriptGraphNode</font> 的节点现在会自动出现在 "创建节点 "菜单中。
+
+### 六、Node Link
 
