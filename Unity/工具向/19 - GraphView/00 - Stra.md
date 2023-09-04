@@ -1,3 +1,5 @@
+<font color=#4db8ff>link：</font>https://qiita.com/dwl/items/dd14f5f2a187084d317b
+
 ## Graph View
 
 ### 一、Window
@@ -564,4 +566,29 @@ public List<SearchTreeEntry> CreateSearchTree(SearchWindowContext context)
 继承自 <font color=#66ff66>ScriptGraphNode</font> 的节点现在会自动出现在 "创建节点 "菜单中。
 
 ### 六、Node Link
+
+将输入输出端口与节点连接。GraphView 中有一些函数可用于设定端口连接的条件。覆盖这些函数以描述条件。
+
+```c++
+public override List<Port> GetCompatiblePorts(Port startPort, NodeAdapter nodeAdapter)
+{
+    var compatiblePorts = new List<Port>();
+
+    foreach (var port in ports.ToList())
+    {
+        // 同じノードは繋げない
+        if (startPort.node == port.node) continue;
+
+        // Input - Input , Output - Outputは繋げない
+        if (startPort.direction == port.direction) continue;
+
+        // ポートタイプが違うものは繋げない
+        if (startPort.portType != port.portType) continue;
+
+        compatiblePorts.Add(port);
+    }
+
+    return compatiblePorts;
+}
+```
 
