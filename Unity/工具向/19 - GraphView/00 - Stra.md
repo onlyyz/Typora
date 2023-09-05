@@ -537,7 +537,7 @@ CLR在启动的时候会创建<font color=#4db8ff>系统域(System Domain)、共
 
 <font color=#4db8ff>AppDomain Link：</font>https://learn.microsoft.com/en-us/dotnet/api/system.appdomain?view=net-7.0
 
-
+<font color=#FFCE70>ScriptGraphSearchWindowProvider</font>
 
 ```c#
 public List<SearchTreeEntry> CreateSearchTree(SearchWindowContext context)
@@ -567,28 +567,34 @@ public List<SearchTreeEntry> CreateSearchTree(SearchWindowContext context)
 
 ### 六、Node Link
 
-将输入输出端口与节点连接。GraphView 中有一些函数可用于设定端口连接的条件。覆盖这些函数以描述条件。
+将输入输出端口与节点连接。<font color=#bc8df9>GraphView </font>中有一些函数可用于设定端口连接的条件。覆盖这些函数以描述条件。
 
-```c++
+#### 6.1 CompatiblePorts
+
+我们可以通过函数<font color=#66ff66>GetCompatiblePorts</font>获取，并且给定<font color=#FFCE70>Prot</font>兼容的所有<font color=#FFCE70>Prot</font>
+
+并且可以通过<font color="red">ports</font>获得当前<font color=#bc8df9>Graph</font>中所有<font color=#FFCE70>Prot</font>
+
+<font color=#4db8ff>GetCompatiblePorts Link：</font>https://docs.unity3d.com/ScriptReference/Experimental.GraphView.GraphView.GetCompatiblePorts.html
+
+<font color=#4db8ff>Ports LInk：</font>https://docs.unity3d.com/ScriptReference/Experimental.GraphView.GraphView-ports.html
+
+```c#
 public override List<Port> GetCompatiblePorts(Port startPort, NodeAdapter nodeAdapter)
 {
     var compatiblePorts = new List<Port>();
-
     foreach (var port in ports.ToList())
     {
-        // 同じノードは繋げない
+         // 不能连接同一节点
         if (startPort.node == port.node) continue;
-
-        // Input - Input , Output - Outputは繋げない
+         // 不能连接输入 - 输入、输出 - 输出
         if (startPort.direction == port.direction) continue;
-
-        // ポートタイプが違うものは繋げない
+        // 不能连接不同的端口类型
         if (startPort.portType != port.portType) continue;
-
         compatiblePorts.Add(port);
     }
-
     return compatiblePorts;
 }
 ```
 
+当节点数量增加时它似乎变得很重要，<font color=#66ff66>GraphView</font>的基本功能到这里就结束了。由于Namaji节点的可扩展性很高，所以每个人都要准备好自己的<font color="red">Save and Load</font>等功能。
