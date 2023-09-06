@@ -8,7 +8,7 @@ E:\dev\Hazel>git submodule add https://github.com/gabime/spdlog.git Hazel/vendor
 $(SolutionDir)Hazel\vendor\spdlog\include
 ```
 
-![image-20230801073222968](E:\dev\Typora-Note\Engine\assets\image-20230801073222968.png)
+![image-20230801073222968](.\assets\image-20230801073222968.png)
 
 添加到每个项目
 

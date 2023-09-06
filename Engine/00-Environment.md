@@ -2,18 +2,18 @@
 
 #### 1、环境配置
 
-![image-20230728072755050](E:/dev/Typora-Note/Engine/assets/image-20230728072755050.png)
+![image-20230728072755050](./assets/image-20230728072755050.png)
 
 ```c++
 $(SolutionDir)bin\$(Configuration)-$(Platform)\$(ProjectName)\
 $(SolutionDir)bin-int\$(Configuration)-$(Platform)\$(ProjectName)\
 ```
 
-![image-20230728073213042](E:/dev/Typora-Note/Engine/00-Environment.assets/image-20230728073213042.png)
+![image-20230728073213042](./assets/image-20230728073213042.png)
 
 同样的属性设置
 
-<img src="E:/dev/Typora-Note/Engine/00-Environment.assets/image-20230728073355802.png" alt="image-20230728073355802" style="zoom:67%;" />
+<img src="./assets/image-20230728073355802.png" alt="image-20230728073355802" style="zoom:67%;" />
 
 ```C++
 $(SolutionDir)bin\$(Configuration)-$(Platform)\$(ProjectName)\
@@ -22,7 +22,7 @@ $(SolutionDir)bin-int\$(Configuration)-$(Platform)\$(ProjectName)\
 
 #### 2、修改启动项
 
-![image-20230728073537906](E:/dev/Typora-Note/Engine/00-Environment.assets/image-20230728073537906.png)
+![image-20230728073537906](./assets/image-20230728073537906.png)
 
 ```c++
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Hazel", "Hazel\Hazel.vcxproj", "{882E5969-ECF0-4865-8291-59BEF04DF796}"
@@ -39,11 +39,11 @@ EndProject
 
 #### 3、引用项目
 
-![image-20230728073839385](E:/dev/Typora-Note/Engine/00-Environment.assets/image-20230728073839385.png)
+![image-20230728073839385](./assets/image-20230728073839385.png)
 
 4、测试
 
-![image-20230728074154732](E:/dev/Typora-Note/Engine/00-Environment.assets/image-20230728074154732.png)
+![image-20230728074154732](./assets/image-20230728074154732.png)
 
 .h
 
@@ -147,7 +147,7 @@ HZ_PLATFORM_WINDOWS;HZ_BUILD_DLL;_WINDLL;%(PreprocessorDefinitions)
 HZ_PLATFORM_WINDOWS;_MBCS;%(PreprocessorDefinitions)
 ```
 
-![image-20230728092752127](E:/dev/Typora-Note/Engine/00-Environment.assets/image-20230728092752127.png)
+![image-20230728092752127](./assets/image-20230728092752127.png)
 
 处理API
 
@@ -168,7 +168,7 @@ public:
 
 #### 3、include<>
 
-![image-20230728093654961](E:/dev/Typora-Note/Engine/00-Environment.assets/image-20230728093654961.png)
+![image-20230728093654961](./assets/image-20230728093654961.png)
 
 ```C++
 #pragma once
@@ -185,7 +185,7 @@ public:
 $(SolutionDir)Hazel\src;
 ```
 
-![image-20230728093618208](E:/dev/Typora-Note/Engine/00-Environment.assets/image-20230728093618208.png)
+![image-20230728093618208](./assets/image-20230728093618208.png)
 
 #### 4、测试
 
@@ -212,7 +212,7 @@ $(SolutionDir)Hazel\src;
 		delete sandbox;
 		return 0;
 	}
-![image-20230728100411604](E:/dev/Typora-Note/Engine/00-Environment.assets/image-20230728100411604.png)
+![image-20230728100411604](./assets/image-20230728100411604.png)
 
 5、主代码
 
