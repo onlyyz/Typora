@@ -46,11 +46,9 @@ public class SampleGraphEditorWindow : EditorWindow
 
 接下来，我们将快速创建一个 <font color=#bc8df9>GraphView</font>。它是上图中节点和边缘的父节点。一旦最小化，我们将创建一个不显示任何内容的 <font color=#bc8df9>GraphView</font>
 
-脚本：<font color=#FFCE70>SampleGraphView</font>
-
 ```C#
+//SampleGraphView
 using UnityEditor.Experimental.GraphView;
-
 public class SampleGraphView : GraphView
 {
 }
@@ -107,4 +105,107 @@ public SampleGraphView() : base()
 どうやらNode自体は作成されているのですが、GraphViewのHeightが0になっているようです。
 きちんと表示されるようにHeightを設定してあげます。
 
-节点本身似乎已经创建，但 GraphView 的高度却设置为 0。请设置高度，以便正确显示。
+节点本身似乎已经创建，但 <font color=#bc8df9>GraphView </font>的高度却设置为 0。请设置高度，以便正确显示。
+
+```C#
+//SampleGraphEditorWindow.CS
+void OnEnable()
+{
+    var graphView = new SampleGraphView()
+    {
+        style = { flexGrow = 1 }
+    };
+    rootVisualElement.Add(graphView);
+}
+```
+
+<img src="assets/https%253A%252F%252Fqiita-image-store.s3.ap-northeast-1.amazonaws.com%252F0%252F46278%252Fcf1b758c-052d-9a58-5acf-172b93d024af.pngixlib=rb-4.0.png" alt="スクリーンショット 2019-11-23 23.49.31.png" style="zoom:33%;" />
+
+现在，<font color=#bc8df9>GraphView </font>可以拉伸和收缩，以适应编辑器窗口的高度，并完整显示，隐藏的节点现在可见。
+
+#### 1.4 NodeにPortをつける
+
+<font color=#66ff66>Node</font>与其他<font color=#66ff66>Node</font>相连。在本例中，边缘是从<font color=#bc8df9>OutputPort</font>连接到<font color=#bc8df9>InputPort</font>的。
+首先，为节点附加输入端口和输出端口。此外，我们还将简要准备节点的外观。
+
+```C#
+//SampleNode.cs
+public SampleNode()
+{
+    title = "Sample";
+
+    var inputPort = Port.Create<Edge>(Orientation.Horizontal, Direction.Input, Port.Capacity.Single, typeof(Port));
+    inputContainer.Add(inputPort);
+
+    var outputPort = Port.Create<Edge>(Orientation.Horizontal, Direction.Output, Port.Capacity.Single, typeof(Port));
+    outputContainer.Add(outputPort);
+}
+```
+
+<img src="assets/https%253A%252F%252Fqiita-image-store.s3.ap-northeast-1.amazonaws.com%252F0%252F46278%252Fe7cbe842-c934-c944-337d-06eab11ad140.pngixlib=rb-4.0.png" alt="スクリーンショット 2019-11-23 23.50.02.png" style="zoom:33%;" />
+
+目前，<font color=#66ff66>Port </font>和 <font color=#66ff66>Edge </font>使用的是基础材料，但它突然变成了类似节点的东西。
+
+#### 1.5 Nodeを動かせるようにする
+
+在这种情况下，我觉得节点不动有点奇怪，所以在这里让它动一下。在 <font color=#bc8df9>GraphView </font>中，您可以为节点添加<font color="red">Manipulator</font>操纵器，使其移动。操纵器有多种类型，但现在我们只讨论可以拖动节点移动的操纵器。
+
+<font color=#66ff66>UnityEngine.UIElements </font>可以利用<font color=#FFCE70>using</font>来使用
+
+```C#
+//SampleGraphView.cs
+using UnityEngine.UIElements;
+```
+
+SelectionDraggerをAddManipulatorすると，当 <font color=#66ff66>SelectionDragger </font>为 <font color="red">AddManipulator </font>参数时。
+
+```C#
+public SampleGraphView() : base()
+{
+    AddElement(new SampleNode());
+    this.AddManipulator(new SelectionDragger());
+}
+```
+
+拖动即可移动。
+
+#### 1.6 Nodeを複数作れるようにする
+
+目前，<font color=#bc8df9>GraphView </font>构造函数应该会创建一个、这可以通过右键菜单添加。
+
+```C#
+//SampleGraphView.cs
+public SampleGraphView() : base()
+{
+    this.AddManipulator(new SelectionDragger());
+
+    nodeCreationRequest += context =>
+    {
+        AddElement(new SampleNode());
+    };
+}
+```
+
+<img src="assets/https%253A%252F%252Fqiita-image-store.s3.ap-northeast-1.amazonaws.com%252F0%252F46278%252Fda804162-3a53-c531-80dd-2cb4628125dc.pngixlib=rb-4.0.png" alt="スクリーンショット 2019-11-23 23.50.52.png" style="zoom:33%;" />
+
+现在，您可以创建多个 <font color=#bc8df9>SampleNodes</font>。现在，您想连接这些节点，但它们似乎无法正常连接。
+
+#### 1.7 Node同士を繋げる
+
+<font color=#FFCE70>Node</font>不能连接到任何<font color=#FFCE70>Node</font>或任何端口。它需要从<font color=#66ff66>InputPort</font>连接到正确的<font color=#66ff66>OutputPort</font>。因此，覆盖 <font color=#bc8df9> GetCompatiblePorts </font>可返回正确的端口。
+
+```C#
+//SampleGraphView.cs
+public override List<Port> GetCompatiblePorts(Port startAnchor, NodeAdapter nodeAdapter)
+{
+    return ports.ToList();
+}
+```
+
+在这种情况下，我暂时尝试连接所有<font color=#66ff66>Port</font>、事实上，有必要从 <font color="red">startAnchor </font>中的端口做出正确的决定。
+
+<img src="assets/https%253A%252F%252Fqiita-image-store.s3.ap-northeast-1.amazonaws.com%252F0%252F46278%252F5d774e9d-ba21-4c89-450c-a3267c62d569.pngixlib=rb-4.0.png" alt="スクリーンショット 2019-11-23 23.50.58.png" style="zoom:33%;" />
+
+要看清<font color="red">Edge</font>颜色和背景颜色非常困难，但现在节点是相互连接的。至此，我想我已经将 <font color=#66ff66>GraphView </font>用户界面本身的设计达到了一个合理的水平。我想过就此结束，但我觉得要真正创建一个工具，元素还是不够多、我将继续学习创建工具的章节。
+
+### 二、GraphViewを用いてツールを作成する
