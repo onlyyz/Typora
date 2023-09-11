@@ -70,7 +70,7 @@ cat ~/.ssh/id_ed25519.pub
 
 ## 提交项目
 
-```
+```C#
 //初始化
 git init
 	git status
