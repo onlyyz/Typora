@@ -209,3 +209,183 @@ public override List<Port> GetCompatiblePorts(Port startAnchor, NodeAdapter node
 要看清<font color="red">Edge</font>颜色和背景颜色非常困难，但现在节点是相互连接的。至此，我想我已经将 <font color=#66ff66>GraphView </font>用户界面本身的设计达到了一个合理的水平。我想过就此结束，但我觉得要真正创建一个工具，元素还是不够多、我将继续学习创建工具的章节。
 
 ### 二、GraphViewを用いてツールを作成する
+
+尽管我称其为工具，但我认为创建一个实用工具太长了，所以我将定义最低要求。
+
+- 可以放大和缩小
+- 更改背景颜色
+- 可以创建多种类型的节点
+- 当按下执行按钮时，将处理连接到根节点的节点。
+
+除此之外，我们还会创建一个函数节点，不过这次我们只会输入一个日志输出节点，并且我们 只会
+向日志输出节点输入字符串。
+
+#### 2.1ズームインズームアウトを行う
+
+如果您使用节点编辑器，您会希望将此作为一个习惯来实现。事实上，只需在 <font color=#66ff66>GraphView </font>中调用 <font color=#bc8df9>SetupZoom </font>即可放大或缩小。
+
+```C#
+//SampleGraphView.cs
+public SampleGraphView() : base()
+{
+    SetupZoom(ContentZoomer.DefaultMinScale, ContentZoomer.DefaultMaxScale);
+    this.AddManipulator(new SelectionDragger());
+    nodeCreationRequest += context =>
+    {
+        AddElement(new SampleNode());
+    };
+}
+```
+
+#### 2.2 背景色を変更する
+
+这个也很简单，只需在 <font color=#bc8df9>GraphView </font>中添加一个名为 <font color=#66ff66>GridBackground </font>的 <font color=#4db8ff>VisualElement</font>，就可以暂时获得黑色背景。
+
+```C#
+//SampleGraphView.cs
+public SampleGraphView() : base()
+{
+    SetupZoom(ContentZoomer.DefaultMinScale, ContentZoomer.DefaultMaxScale);
+    Insert(0, new GridBackground());
+    this.AddManipulator(new SelectionDragger());
+    nodeCreationRequest += context =>
+    {
+        AddElement(new SampleNode());
+    };
+}
+```
+
+此外，<font color=#4db8ff>VisualElement </font>是 <font color="red">UIElements </font>的基本元素，它们被组合起来创建用户界面。
+
+如果你稍微接触过 <font color=#66ff66>UIElements</font>，你可能会认为可以直接使用 <font color=#4db8ff>Add(VisualElement 元素)</font>、
+如果这样做，<font color=#66ff66>GridBackground</font> 将出现在 <font color="red">GraphView </font>中元素的前面，因此请使用 <font color=#66ff66>Insert </font>将其插入后面。
+
+#### 2.3 ノードを実装する
+
+现在，我们将创建一个<font color=#FFCE70>Node</font>。我们将创建的<font color=#FFCE70>Node</font>是
+
+根<font color=#FFCE70>Node</font>
+
+日志输出<font color=#FFCE70>Node</font>
+
+字符串输出<font color=#FFCE70>Node</font>
+一旦 <font color=#66ff66>SampleNode </font>成为一个抽象类，我们将从它继承节点。
+
+```C#
+//SampleNode.cs
+using UnityEditor.Experimental.GraphView;
+public abstract class SampleNode : Node
+{}
+```
+
+现在，首先创建一个<font color=#bc8df9>LogNode</font>日志输出节点。
+
+```c#
+//ProcessNode.cs
+using UnityEditor.Experimental.GraphView;
+public class ProcessNode : SampleNode
+{
+    public ProcessNode()
+    {
+        var inputPort = Port.Create<Edge>(Orientation.Horizontal, Direction.Input, Port.Capacity.Single, typeof(Port));
+        inputPort.portName = "In";
+        inputContainer.Add(inputPort);
+
+        var outputPort = Port.Create<Edge>(Orientation.Horizontal, Direction.Output, Port.Capacity.Single, typeof(Port));
+        outputPort.portName = "Out";
+        outputContainer.Add(outputPort);
+    }
+}
+```
+
+一旦<font color=#bc8df9>进程节点</font>（ProcessNode）结束，就会创建<font color=#bc8df9>日志节点</font>（LogNode）。
+
+```c#
+//LogNode.cs
+using UnityEditor.Experimental.GraphView;
+public class LogNode : ProcessNode
+{
+    public LogNode() : base()
+    {
+        title = "Log";
+
+        var inputPort = Port.Create<Edge>(Orientation.Horizontal, Direction.Input, Port.Capacity.Single, typeof(string));
+        inputContainer.Add(inputPort);
+    }
+}
+```
+
+接下来，创建一个<font color=#bc8df9>StringNode</font>字符串输出节点。这是因为我们可以假设要在不同的地方使用相同的值、
+将容量设为多重。
+
+```C#
+//StringNode.cs
+using UnityEngine.UIElements;
+using UnityEditor.Experimental.GraphView;
+
+public class StringNode : SampleNode
+{
+    private TextField textField;
+    public string Text { get { return textField.value; } }
+
+    public StringNode() : base()
+    {
+        title = "String";
+
+        var outputPort = Port.Create<Edge>(Orientation.Horizontal, Direction.Output, Port.Capacity.Multi, typeof(string));
+        outputContainer.Add(outputPort);
+
+        textField = new TextField();
+        mainContainer.Add(textField);
+    }
+}
+```
+
+最后，创建<font color=#bc8df9>RootNode</font>根节点。根节点不应消失，因此要从 <font color=#66ff66>CAPABILITIES </font>中减去 <font color="red">Deletable</font>。
+
+<font color=#4db8ff>Capabilities Link：</font>https://docs.unity3d.com/ScriptReference/Experimental.GraphView.Capabilities.html
+
+操纵器用于轻松确定 GraphElement 上有效操作的能力。
+
+```C#
+//RootNode.cs
+using UnityEditor.Experimental.GraphView;
+public class RootNode : SampleNode
+{
+    public RootNode() : base()
+    {
+        title = "Root";
+
+        capabilities -= Capabilities.Deletable;
+
+        var outputPort = Port.Create<Edge>(Orientation.Horizontal, Direction.Output, Port.Capacity.Single, typeof(Port));
+        outputPort.portName = "Out";
+        outputContainer.Add(outputPort);
+    }
+}
+```
+
+在这里，生成 <font color=#66ff66>GraphView </font>时应放置一个 <font color=#bc8df9>RootNode</font>。
+
+```C#
+//SampleGraphView.cs
+public RootNode root;
+
+public SampleGraphView() : base()
+{
+    SetupZoom(ContentZoomer.DefaultMinScale, ContentZoomer.DefaultMaxScale);
+
+    Insert(0, new GridBackground());
+
+    root = new RootNode();
+    AddElement(root);
+
+    this.AddManipulator(new SelectionDragger());
+    nodeCreationRequest += context =>
+    {
+        AddElement(new SampleNode());
+    };
+}
+```
+
+然后就可以在编辑器中创建这些已创建的节点。
