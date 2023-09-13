@@ -389,3 +389,262 @@ public SampleGraphView() : base()
 ```
 
 然后就可以在编辑器中创建这些已创建的节点。
+
+#### 2.4 任意のノードを選択し、作成する
+
+<font color=#bc8df9>SearchWindow </font>可轻松创建可选择节点的用户界面。需要一个类实现 <font color="red">ISearchWindowProvider </font>的 <font color=#66ff66>ScriptableObject</font>。
+
+```C#
+//SampleSearchWindowProvider.cs
+using System;
+using System.Collections.Generic;
+using UnityEngine;
+using UnityEditor.Experimental.GraphView;
+
+public class SampleSearchWindowProvider : ScriptableObject, ISearchWindowProvider
+{
+    private SampleGraphView graphView;
+    public void Initialize(SampleGraphView graphView)
+    {
+        this.graphView = graphView;
+    }
+
+    List<SearchTreeEntry> ISearchWindowProvider.CreateSearchTree(SearchWindowContext context)
+    {
+        var entries = new List<SearchTreeEntry>();
+        entries.Add(new SearchTreeGroupEntry(new GUIContent("Create Node")));
+
+        foreach (var assembly in AppDomain.CurrentDomain.GetAssemblies())
+        {
+            foreach (var type in assembly.GetTypes())
+            {
+                if (type.IsClass && !type.IsAbstract && (type.IsSubclassOf(typeof(SampleNode)))
+                    && type != typeof(RootNode))
+                {
+                    entries.Add(new SearchTreeEntry(new GUIContent(type.Name)) { level = 1, userData = type });
+                }
+            }
+        }
+
+        return entries;
+    }
+
+    bool ISearchWindowProvider.OnSelectEntry(SearchTreeEntry searchTreeEntry, SearchWindowContext context)
+    {
+        var type = searchTreeEntry.userData as System.Type;
+        var node = Activator.CreateInstance(type) as SampleNode;
+        graphView.AddElement(node);
+        return true;
+    }
+}
+```
+
+<font color=#66ff66>CreateSearchTree</font> 返回一个继承自 <font color=#bc8df9>SearchTreeEntry</font> 中 <font color=#FFCE70>SampleNode  Class</font>的类、<font color=#bc8df9>OnSelectEntry </font>执行与所选项相对应的处理。这一次，<font color=#FFCE70>Node </font>在这里创建。
+
+此外，将右键单击创建 <font color=#FFCE70>Node </font>改为调用 <font color=#bc8df9>SearchWindow</font>。
+
+
+
+<font color=#4db8ff>CompilationPipeline.GetAssemblies Link：</font>https://docs.unity3d.com/ScriptReference/Compilation.CompilationPipeline.GetAssemblies.html
+
+<font color=#bc8df9>Declaration：</font>按 <font color=#66ff66>AssembliesType </font>筛选获取 Unity 编译的所有脚本程序集。
+
+<font color=#4db8ff>ISearchWindowProvider.CreateSearchTree Link：</font>https://docs.unity3d.com/ScriptReference/Experimental.GraphView.ISearchWindowProvider.CreateSearchTree.html
+
+<font color=#66ff66>Return：</font>List<<font color=#bc8df9>SearchTreeEntry</font>> 返回搜索窗口中显示的 SearchTreeEntry 对象列表。
+
+<font color=#bc8df9>Declaration：</font>搜索窗口首次打开和重新加载时都会调用该方法。重新加载会在进入播放模式或脚本域重新加载时发生。在重新加载过程中，返回的对象列表不会被修改。因此，在每次调用缓存列表时重复使用列表是安全的。
+
+<font color=#4db8ff>SearchTreeEntry Link：</font>https://docs.unity3d.com/ScriptReference/Experimental.GraphView.SearchTreeEntry.html
+
+```C#
+//SampleGraphView.cs
+public SampleGraphView() : base()
+{
+    SetupZoom(ContentZoomer.DefaultMinScale, ContentZoomer.DefaultMaxScale);
+
+    Insert(0, new GridBackground());
+
+    root = new RootNode();
+    AddElement(root);
+
+    this.AddManipulator(new SelectionDragger());
+
+    var searchWindowProvider = new SampleSearchWindowProvider();
+    searchWindowProvider.Initialize(this);
+
+    nodeCreationRequest += context =>
+    {
+        SearchWindow.Open(new SearchWindowContext(context.screenMousePosition), searchWindowProvider);
+    };
+}
+```
+
+现在您可以选择任何要创建的节点。
+
+#### 2.5 正しいポート同士のみが繋がるようにする
+
+在用户界面实现部分，所有节点目前都是连接的，因此我们将对其进行修复。
+
+```C#
+//SampleGraphView.cs
+public override List<Port> GetCompatiblePorts(Port startAnchor, NodeAdapter nodeAdapter)
+{
+    var compatiblePorts = new List<Port>();
+    foreach (var port in ports.ToList())
+    {
+        if (startAnchor.node == port.node ||
+            startAnchor.direction == port.direction ||
+            startAnchor.portType != port.portType)
+        {
+            continue;
+        }
+
+        compatiblePorts.Add(port);
+    }
+    return compatiblePorts;
+}
+```
+
+<font color=#4db8ff>GraphView.GetCompatiblePorts Link：</font>https://docs.unity3d.com/ScriptReference/Experimental.GraphView.GraphView.GetCompatiblePorts.html
+
+<font color=#4db8ff>Port Link：</font>https://docs.unity3d.com/ScriptReference/Experimental.GraphView.Port.html
+
+不要连接到同一节点
+
+输入到输入和输出到输出不连接。
+
+如果端口中设置的类型不匹配，则不会连接。
+
+#### 2.6 実際にノードを用いて処理を行う
+
+在实际处理过程中，有必要按顺序获取与<font color=#4db8ff>Root Node</font>相连的<font color=#FFCE70>Node</font>并进行处理。似乎没有获取与<font color=#FFCE70>Node</font>相连的其他<font color=#FFCE70>Node</font>的功能，因此可能需要在生成<font color=#66ff66>Port</font>时缓存它们。
+
+另外，由于我们希望在<font color=#FFCE70>Node</font>侧编写处理程序，因此我们将为 <font color="red">ProcessNode </font>提供一个处理方法。
+
+保存两个<font color=#FFCE70>Port</font>，并且提供一个抽象函数
+
+```C#
+//ocessNode.cs
+using UnityEditor.Experimental.GraphView;
+public abstract class ProcessNode : SampleNode
+{
+    public Port InputPort;
+    public Port OutputPort;
+
+    public ProcessNode()
+    {
+        InputPort = Port.Create<Edge>(Orientation.Horizontal, Direction.Input, Port.Capacity.Single, typeof(Port));
+        InputPort.portName = "In";
+        inputContainer.Add(InputPort);
+
+        OutputPort = Port.Create<Edge>(Orientation.Horizontal, Direction.Output, Port.Capacity.Single, typeof(Port));
+        OutputPort.portName = "Out";
+        outputContainer.Add(OutputPort);
+    }
+
+    public abstract void Execute();
+}
+```
+
+同样保存<font color=#FFCE70>Port</font>，同时继承抽象方法
+
+```C#
+//LogNode.cs
+using System.Linq;
+using UnityEngine;
+using UnityEditor.Experimental.GraphView;
+
+public class LogNode : ProcessNode
+{
+    private Port inputString;
+
+    public LogNode() : base()
+    {
+        title = "Log";
+
+        inputString = Port.Create<Edge>(Orientation.Horizontal, Direction.Input, Port.Capacity.Single, typeof(string));
+        inputContainer.Add(inputString);
+    }
+
+    public override void Execute()
+    {
+        var edge = inputString.connections.FirstOrDefault();
+        var node = edge.output.node as StringNode;
+
+        if (node == null) return;
+
+        Debug.Log(node.Text);
+    }
+}
+```
+
+<font color=#4db8ff>Root Node</font>也同样如此<font color=#FFCE70>Port</font>
+
+```C#
+//RootNode.cs
+using UnityEditor.Experimental.GraphView;
+
+public class RootNode : SampleNode
+{
+    public Port OutputPort;
+
+    public RootNode() : base()
+    {
+        title = "Root";
+
+        capabilities -= Capabilities.Deletable;
+
+        OutputPort = Port.Create<Edge>(Orientation.Horizontal, Direction.Output, Port.Capacity.Single, typeof(Port));
+        OutputPort.portName = "Out";
+        outputContainer.Add(OutputPort);
+    }
+}
+```
+
+现在，将从<font color=#4db8ff>Root Node</font>开始依次获取和处理<font color=#FFCE70>Node</font>。
+
+```C#
+//SampleGraphView
+using System.Linq
+
+    //-------------------------------------
+
+    public void Execute()
+{
+    var rootEdge = root.OutputPort.connections.FirstOrDefault();
+    if (rootEdge == null) return;
+
+    var currentNode = rootEdge.input.node as ProcessNode;
+
+    while (true)
+    {
+        currentNode.Execute();
+
+        var edge = currentNode.OutputPort.connections.FirstOrDefault();
+        if (edge == null) break;
+
+        currentNode = edge.input.node as ProcessNode;
+    }
+}
+```
+
+適當的方式去調用
+
+```C#
+//SampleGraphEditorWindow.cs
+void OnEnable()
+{
+    var graphView = new SampleGraphView()
+    {
+        style = { flexGrow = 1 }
+    };
+    rootVisualElement.Add(graphView);
+
+    rootVisualElement.Add(new Button(graphView.Execute) { text = "Execute" });
+}
+```
+
+最后，甚至还执行了流程。
+
+![image-20230913153321754](assets/image-20230913153321754.png)
