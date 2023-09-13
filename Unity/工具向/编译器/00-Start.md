@@ -1148,3 +1148,69 @@ private void OnGUI() {
     }
 ```
 
+#### 6.7 信息与提示
+
+##### 6.7.1 LabelField 文本显示
+
+从【6.1 Field】中提出来放到这里，<font color=#bc8df9>LabelField</font>并不与输入编辑相关，它单纯就是...显示出一文本
+
+可以使用 <font color=#66ff66>LabelField </font>来为用户展示更多细节信息，或是一些提示
+
+```c++
+  private void OnGUI() {
+        EditorGUILayout.LabelField("Hello","World!");
+        //文本标题 - 文本内容
+    }
+```
+
+##### 6.7.2 SelectableLabel 可选复制信息
+
+和<font color=#bc8df9>LabelField</font>一样展示一段文本，不同的是用户可以通过光标选中并复制这段文本
+
+```c++
+private void OnGUI() {
+    EditorGUILayout.SelectableLabel("可以复制的文本"); //不能加标题
+}
+```
+
+##### 6.7.3 HelpBox 帮助气泡框
+
+Box + 气泡Icon，QT中也有类似风格的消息对话框
+
+```c++
+private void OnGUI() {
+    EditorGUILayout.HelpBox("一般的提示，LabelField加一个Box", MessageType.None);
+    EditorGUILayout.HelpBox("带Info气泡Icon 的提示/消息", MessageType.Info);
+    EditorGUILayout.HelpBox("带Warning气泡Icon 的警告/警示", MessageType.Warning);
+    EditorGUILayout.HelpBox("带Error气泡Icon 的错误提示", MessageType.Error);
+}
+```
+
+![image-20230914003536020](./assets/image-20230914003536020.png)
+
+#### 6.7 布局相关
+
+【6.0 ScrollView的使用】已经提到了
+
+特别针对 <font color=#66ff66>EditorWindow </font>拓展，如果控件较多，可以直接在头尾加上 <font color="red">ScrollView Begin/End</font> 基于整个窗口展开 <font color=#4db8ff>ScrollView</font>
+
+<font color="red">EditorGUILayout.ScrollView</font> 也仅仅是能在头尾用上，由于 <font color=#4db8ff>EditorGUILayout</font> 没有Area布局，因此无法通过 EditorGUILayout 在 EditorWindow 拓展中定义多重 ScrollView 视图
+
+但我们可以通过 GUILayout 那边的 Area + ScrollView 定义多重视图，但要特别注意的是 ScrollView 是无法形成嵌套的，否则外层的 ScrollView 会无法展开
+
+不能混用 <font color=#bc8df9>EditorGUILayout.ScrollView</font> + <font color=#bc8df9>GUILayout.Area</font>
+
+```c++
+private void OnGUI() {
+    //如果东西多，一定要用 ScrollView 包一下，否则必须拉伸窗口才能看见所有控件
+    scrollViewRoot = EditorGUILayout.BeginScrollView(scrollViewRoot);
+
+    //很多控件
+    //记得加End
+    EditorGUILayout.EndScrollView();
+    //Editor OnInspectorGUI 拓展中，通常不考虑 ScrollView ，因为Inspector窗口自带有纵向的ScrollView
+    //EditorWindow 拓展中，由于 EditorGUILayout 没有Area布局，因此无法定义多重的 ScrollView 
+
+}
+```
+
