@@ -1188,13 +1188,13 @@ private void OnGUI() {
 
 ![image-20230914003536020](./assets/image-20230914003536020.png)
 
-#### 6.7 布局相关
+#### 6.8 布局相关
 
-【6.0 ScrollView的使用】已经提到了
+【6.0 <font color=#bc8df9>ScrollView</font>的使用】已经提到了
 
 特别针对 <font color=#66ff66>EditorWindow </font>拓展，如果控件较多，可以直接在头尾加上 <font color="red">ScrollView Begin/End</font> 基于整个窗口展开 <font color=#4db8ff>ScrollView</font>
 
-<font color="red">EditorGUILayout.ScrollView</font> 也仅仅是能在头尾用上，由于 <font color=#4db8ff>EditorGUILayout</font> 没有Area布局，因此无法通过 EditorGUILayout 在 EditorWindow 拓展中定义多重 ScrollView 视图
+<font color="red">EditorGUILayout.ScrollView</font> 也仅仅是能在头尾用上，由于 <font color=#4db8ff>EditorGUILayout</font> 没有Area布局，因此无法通过 <font color=#4db8ff>EditorGUILayout </font>在 <font color=#4db8ff>EditorWindow </font>拓展中定义多重 <font color=#bc8df9>ScrollView </font>视图
 
 但我们可以通过 GUILayout 那边的 Area + ScrollView 定义多重视图，但要特别注意的是 ScrollView 是无法形成嵌套的，否则外层的 ScrollView 会无法展开
 
@@ -1214,3 +1214,243 @@ private void OnGUI() {
 }
 ```
 
+##### 6.8.1 Horizontal/Vertical 
+
+与<font color=#bc8df9>GUILayout</font>功能一样，记得<font color=#4db8ff>Begin</font>之后<font color=#4db8ff>End</font>
+
+一个 <font color=#66ff66>EditorWindow </font>拓展中 ，<font color=#bc8df9>EditorGUILayout </font>横纵向布局 + <font color=#bc8df9>GUILayout Area</font>定义嵌套<font color="red">ScrollView</font>视图的测例：
+
+```C#
+private Vector2 svroot;
+private float f;
+
+private void OnGUI() {
+
+    GUILayout.BeginArea(new Rect(0, 200, 300, 200)); //注意顺序 先开Area 再开ScrollView
+    svroot = GUILayout.BeginScrollView(svroot);//这样ScrollView才是基于Area展开，而不是整个窗口
+
+    GUILayout.Box("AAA");
+    GUILayout.Box("BBB");
+    GUILayout.Box("CCC");
+    GUILayout.Box("AAA");
+    GUILayout.Box("BBB");
+    GUILayout.Box("CCC");
+    GUILayout.Box("AAA");
+    GUILayout.Box("BBB");
+    GUILayout.Box("CCC");
+    GUILayout.Box("AAA");
+    GUILayout.Box("BBB");
+    GUILayout.Box("CCC");
+    GUILayout.Box("AAA");
+    GUILayout.Box("BBB");
+    GUILayout.Box("CCC");
+    GUILayout.Box("AAA");
+    GUILayout.Box("BBB");
+    GUILayout.Box("CCC");
+
+    f = EditorGUILayout.FloatField("浮点Field：", f);//GUILayout布局 影响 EditorGUILayout控件
+
+    GUILayout.EndScrollView();
+    GUILayout.EndArea();
+
+
+    //上下两个测例，证明了 GUILayout 布局 和 EditorLayout 布局 ，能够互相影响各自 Layout 出的控件
+    //只是我们不能使用 EditorLayout.ScrollVeiw + GUILayout.Area 这种组合
+
+
+    EditorGUILayout.BeginHorizontal();
+    //////////
+    EditorGUILayout.BeginVertical();
+
+    GUILayout.Box("1");
+
+    GUILayout.Box("2");//EditorGUILaoyt布局 影响 GUILayout控件
+
+    GUILayout.Box("3");
+
+    EditorGUILayout.EndVertical();
+    ///////////////
+    EditorGUILayout.BeginVertical();
+
+    GUILayout.Box("4");
+
+    GUILayout.Box("5");
+
+    GUILayout.Box("6");
+
+
+    EditorGUILayout.EndVertical();
+    //////////////
+    EditorGUILayout.BeginVertical();
+
+    GUILayout.Box("7");
+
+    GUILayout.Box("8");
+
+    GUILayout.Box("9");
+
+
+    EditorGUILayout.EndVertical();
+    //////////////
+    EditorGUILayout.EndHorizontal();
+
+}
+```
+
+![image-20230918223657860](assets/image-20230918223657860.png)
+
+##### 6.8.2 ToggleGroup
+
+<font color=#bc8df9>ToggleGroup</font> 是通过顶部的一个<font color=#66ff66>Toggle</font>，来控制中间/内部的所有控件是否激活
+
+当顶部的Toggle置为<font color=#66ff66>ture</font>时，其中的控件能正常使用，置为false，其中的控件变灰，无法使用
+
+不过更好的方式是使用下一节 【6.8.3 折叠栏与折叠组】，将不用的控件折起来（Unity中很多<font color="red">Component</font>就使用了这种模式）
+
+```C#
+private bool isGroupActive;
+private bool anotherToggle;
+private float f;
+
+private void OnGUI() {
+    isGroupActive = EditorGUILayout.BeginToggleGroup(" Toggle Group ",isGroupActive);
+
+    EditorGUILayout.LabelField("HelloWorld!");
+    GUILayout.Box("11111");
+    anotherToggle = GUILayout.Toggle(anotherToggle, "另一个toggle");
+    if (GUILayout.Button("Hello", GUILayout.MaxWidth(200)))
+        Debug.Log("HelloWrold!");
+    f = EditorGUILayout.FloatField("float数值：", f);
+
+    EditorGUILayout.EndToggleGroup();
+}
+```
+
+![image-20230918225257147](assets/image-20230918225257147.png)
+
+<center><font color=#bc8df9>GUILayout</font>控件同样会受EditorGUILayout.ToggleGroup的影响</center>
+
+##### 6.8.3 Foldout/FoldoutHeaderGroup 折叠栏与折叠组
+
+<font color=#bc8df9>Unity Inspector</font>中组件的序列化展开就用到了折叠栏
+
+<font color=#4db8ff>FoldoutHeaderGroup </font>用在组件的大标头上
+
+<font color=#4db8ff>Foldout </font>则用在组件中的字段上
+
+一个小技巧是使用只读的不赋值写法，这样折叠栏会固定打开，从而作为列出项的标题存在
+
+```csharp
+private bool isFoldOut;
+private bool isFoldGroupOut;
+
+private void OnGUI() {
+    //这里Title和Value需要反过来，Unity 2021中没有重载第一参数为 string title 的方法
+    isFoldGroupOut = EditorGUILayout.BeginFoldoutHeaderGroup(isFoldGroupOut, "FoldoutHeaderGroup 折叠栏 - Inspector中组件就使用这种");
+
+    if (isFoldGroupOut) {
+        GUILayout.Box("FoldoutHeaderGroup 折叠的内容");
+        GUILayout.Box("FoldoutHeaderGroup 折叠的内容");
+        GUILayout.Box("FoldoutHeaderGroup 折叠的内容");
+
+        isFoldOut = EditorGUILayout.Foldout(isFoldOut, "Fold 折叠栏 - Inspector组件中字段使用这种");
+
+        if (isFoldOut) {
+            GUILayout.Box("FoldOut 折叠的内容");
+            GUILayout.Box("FoldOut 折叠的内容");
+            GUILayout.Box("FoldOut 折叠的内容");
+        }
+        //Foldout 代码简单，但用起来麻烦，必须点中左端的小三角
+
+    }
+
+    EditorGUILayout.EndFoldoutHeaderGroup();
+    //Foldout 代码麻烦，但用起来简单，有一整个横条Box作为点击的区域
+
+}
+```
+
+![image-20230918230006581](assets/image-20230918230006581.png)
+
+##### 6.8.4 FadeGroup
+
+官方是说可以完成一些动画效果？
+
+<font color=#bc8df9>FadeGroup</font>不想其他<font color=#4db8ff>EditorGUILayout</font>控件那样需要控制一个值，反而是 floatValue值 去控制 <font color="red">FadeGroup </font>的隐藏和显现
+
+从0到1的过程中 FadeGroup 内的控件会从上至下逐步出现
+
+```C#
+float feadValue;
+
+private void OnGUI() {
+
+    EditorGUILayout.LabelField("feadValue：", feadValue.ToString());
+
+    feadValue = EditorGUILayout.Slider(feadValue, 0, 1);
+
+    //如果 Fold 写成这样就会固定展开，但 FadeGroup 反而要这么写
+    //因为【FadeGroup】不控制 【feadValue】，反而是 【feadValue】 控制 【FadeGroup】
+    if (EditorGUILayout.BeginFadeGroup(feadValue)) {
+        GUILayout.Box("InFeadGrop");
+        GUILayout.Box("InFeadGrop");
+        GUILayout.Box("InFeadGrop");
+    }
+
+    EditorGUILayout.EndFadeGroup();
+    GUILayout.Box("OutFeadGrop");
+    GUILayout.Box("OutFeadGrop");
+    GUILayout.Box("OutFeadGrop");
+
+}
+```
+
+![image-20230918230455519](assets/image-20230918230455519.png)
+
+##### 6.8.5 TargetSelectionGroup
+
+<font color=#bc8df9>Unity打包发布平台</font>相关的选卡框，各种资源文件的设置中就大量使用了这样的选卡
+
+借此我们可以为不同的打包发布平台，定制一些专属的拓展编辑选项
+
+```C#
+var selectedBuildTargetGroup = EditorGUILayout.BeginBuildTargetSelectionGrouping();
+
+if(selectedBuildTargetGroup == BuildTargetGroup.Android) {
+    EditorGUILayout.LabelField("这里是Android的配置拓展");
+    if (GUILayout.Button("Android 配置"))
+        Debug.Log("Hello Android!");
+}
+
+if(selectedBuildTargetGroup==BuildTargetGroup.iOS) {
+    EditorGUILayout.LabelField("这里是IOS的配置拓展");
+    if (GUILayout.Button("IOS 配置"))
+        Debug.Log("Hello IOS!");
+}
+
+if (selectedBuildTargetGroup == BuildTargetGroup.Standalone) {
+    EditorGUILayout.LabelField("这里是 Standalone - PC (Windows, Mac, Linux)的配置拓展");
+    if (GUILayout.Button("PC 配置"))
+        Debug.Log("Hello PC!");
+}
+
+if (selectedBuildTargetGroup == BuildTargetGroup.PS5) {  //除非我们装了PS5的打包工具，否则不会因为写了这个而显示出PS5的选卡
+    EditorGUILayout.LabelField("这里是 PS5 的配置拓展");
+    if (GUILayout.Button("PS5 配置"))
+        Debug.Log("Hello PS5!");
+}
+
+EditorGUILayout.EndBuildTargetSelectionGrouping();
+```
+
+<font color=#bc8df9>EditorGUILayout</font>.<font color=#4db8ff>BeginBuildTargetSelectionGrouping</font>() 会返回一个 BuildTargetGroup 枚举，包含Unity支持的各种<font color=#66ff66>Release</font>平台
+
+<font color=#4db8ff>BuildTargetGroup Link：</font>https://docs.unity3d.com/cn/current/ScriptReference/BuildTargetGroup.html
+
+通常只会用到 Standalone（PC），Android，IOS 三个平台
+
+要注意的是能够显示出来的平台选卡，与我们Editor中安装的打包工具相关
+
+![img](assets/v2-c0ef13e897737ef5dfef92027a749525_r.jpg)
+
+##### 6.8.6 Space间隔

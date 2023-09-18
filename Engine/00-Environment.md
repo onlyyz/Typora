@@ -117,7 +117,7 @@ void Application::Run() {
 }}
 ```
 
-core.h
+<font color="red">core.h</font>
 
 如果dll 构建完成则定义，否则导入
 
