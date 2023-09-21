@@ -35,7 +35,7 @@ git reset HEAD^1
 
 
 
-```
+```c#
 从当前节点创建分支
 git checkout -b <branch name>
 列举所有分支
@@ -46,7 +46,7 @@ git checkout <branch name>
 git checkout -D <branch name>
 合并分支
 git merge <branch name>
-rename
+//rename 本地
 git branch -m name name
 ```
 
