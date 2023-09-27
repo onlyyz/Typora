@@ -1,0 +1,17 @@
+ 3dsmax，修改面片的 Pivot Rotate，使其正面朝向 Pivot -Z 方向
+
+![img](assets/2aa3884406a72b23db440ff7115b7114_720.jpg)![img](assets/e84c20dd67b93aa98e0409b850b99599_720.jpg)
+
+注1：3dsmax fbx 模型空间的坐标导入 Unity 仅仅做 X 取反，和世界朝向的处理不同。默认的情况下Unity导入会有个 Transform Rotate X 270 的操作去抵消模型空间未旋转与世界朝向不一致的冲突。
+ 
+![img](assets/ad7399e352f6e29e168c1715a5242d02.jpg)
+
+注2：Unity \ 3dsmax \ Houdini 世界朝向对比
+3dsmax 和 Unity 的区别是，模型顶点坐标先绕3dsmax右手系 X 旋转 -90°，在 X 取反。1. 3dsmax的前-Y，会变成+Z，对应Unity的前+Z
+
+2. 3dsmax的上+Z，会变成+Y，对应Unity的上+Y
+
+
+![img](assets/6811514536edf10608c7a4b57d730ea6.jpg)![img](assets/7eaa777604d0714d8008885bb064a84a.jpg)
+Houdini 和 Unity 是最接近的，只是 X 取反。
+![img](assets/76f406394d70114056269f8f404e0fdb.jpg)
