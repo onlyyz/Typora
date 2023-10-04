@@ -797,3 +797,110 @@ var deleteButton = new Button(() => RemovePort(dialogueNode, GeneratedPort));
 GeneratedPort.Add(deleteButton);
 ```
 
+#### 2.8 Delete 
+
+我们<font color="red">删除元素</font>需要先查询是否存在，因此我们可以先缓存<font color=#4db8ff>UI Element</font>，使用到一个名为<font color=#66ff66>Q</font>的通用函数。参数是<font color=#FFCE70>Type 和 Name </font>
+
+```c#
+//port 
+var generatedPort = GeneratePort(dialogueNode, Direction.Output);
+//
+var oldLabel = generatedPort.contentContainer.Q<Label>("type");
+```
+
+查找名为<font color=#4db8ff> Type </font>的标签，并且收集这<font color=#66ff66>UI Element</font>，随后从<font color=#4db8ff>content Container</font>中删除该元素
+
+<font color=#4db8ff>Link：</font>https://docs.unity3d.com/ScriptReference/30_search.html?q=UIElements.UQueryExtensions.Q
+
+我们已经有了删除<font color=#FFCE70>Port</font>的函数，但是没有具体的操作
+
+我们首先可以判断<font color=#4db8ff>Edge</font>的<font color=#66ff66>Port Name</font>是否与传入的<font color=#66ff66>Port Name</font>相等，并且<font color=#66ff66>Node</font>也相等
+
+```c#
+private void RemovePort(DialogueNode dialogueNode,Port generatedPort)
+{
+    var targetEdge = edges.ToList().Where(x => x.output.portName == generatedPort.portName
+                                               && x.output.node == generatedPort.node);
+}
+```
+
+我们在删除<font color=#FFCE70>Port</font>之前，先断开<font color=#4db8ff>Edge</font>，随后删除<font color=#4db8ff>Port</font>，随后是<font color=#66ff66>Node</font>
+
+```c#
+if(!targetEdge.Any()) return;
+//序列中的第一个元素
+var edge = targetEdge.First();
+edge.input.Disconnect(edge);
+RemoveElement(targetEdge.First());
+
+dialogueNode.outputContainer.Remove(generatedPort);
+dialogueNode.RefreshPorts();
+dialogueNode.RefreshExpandedState();
+```
+
+<font color=#4db8ff>Link：</font>https://learn.microsoft.com/en-us/dotnet/api/system.linq.enumerable.first?view=net-7.0
+
+#### 2.9 Load Data
+
+![image-20231002223212572](assets/image-20231002223212572.png)
+
+加载的时候会发现，<font color=#66ff66>Node</font>的位置，会跑到其他地方，并且没有连接，我们可以修复<font color=#4db8ff>CreateNodes</font>方法去进行修改，让他加载循环的时候，当发现<font color=#4db8ff>Node</font>存在时是跳过本次循环，而不是停止循环
+
+```c#
+private void ClearGraph()
+{
+  //set Entry points guid back from the save . Discard existing guid.
+  Nodes.Find(x => x.EntryPoint).GUID = _ContainerCache.Nodelinks[0].BaseNodeGuid;
+
+  foreach (var node in Nodes)
+  {
+     //if(node.EntryPoint) return;
+     if(node.EntryPoint) continue;
+
+     //Remove edges that connected to this node;
+     Edges.Where(x => x.input.node == node).ToList().
+        ForEach(edge => _targetGraphView.RemoveElement(edge));
+
+     //then remove the node
+     _targetGraphView.RemoveElement(node);
+  }
+}
+```
+
+#### 2.10 ConnectNodes
+
+我们可以从缓存保存的文件中获取所有的节点连接，诉后匹配<font color=#4db8ff>Node</font>和输出<font color=#4db8ff>Node</font>之间的连接，随后遍历所有连接，收集有关的连接在一起的<font color=#4db8ff>Node</font>数据，识别他们，随后让链接的<font color=#4db8ff>Node</font>获取到当前的<font color=#4db8ff>Node</font>之后
+
+```c#
+  private void ConnectNodes()
+   {
+      for (int i = 0; i < Nodes.Count; i++)
+      {
+         var connections = _ContainerCache.Nodelinks.Where(x => x.BaseNodeGuid == Nodes[i].GUID)
+            .ToList();
+
+         for (int j = 0; j < connections.Count; j++)
+         {
+            var targetNodeGuid = connections[j].TargetNodeGuid;
+            var targetNode = Nodes.First(x => x.GUID == targetNodeGuid);
+         }
+      }
+   }
+```
+
+随后利用函数，将<font color=#FFCE70>Port</font>链接在一起，通过<font color=#66ff66>OutputContainer</font>去访问两个<font color=#FFCE70>Port</font>来连接在一起，以匹配虚幻的<font color=#66ff66>curtain Node</font>的<font color=#bc8df9>Output Port</font>
+
+随后将<font color=#bc8df9>Output Port</font>从外部节点传递出去，作为第二个参数，连接成功之后，读取文件中他们的位置以及大小
+
+```c#
+//连接端口
+LinkNodes(Nodes[i].outputContainer[j].Q<Port>(), (Port)targetNode.inputContainer[0]);
+//Position
+targetNode.SetPosition(new Rect(
+_ContainerCache.DialogueNodeData.First(x =>x.Guid == targetNodeGuid).Position,
+_targetGraphView.defaultNodeSize));
+```
+
+编辑链接方法<font color=#bc8df9>LinkNodes</font>
+
+先将输出，输入节点缓存

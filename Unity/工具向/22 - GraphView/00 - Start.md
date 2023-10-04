@@ -157,15 +157,169 @@ namespace MU5Editor.NodeEditor
 
 ```
 
+#### 2.2 Toolbar
+
 <font color=#bc8df9>Toolbar：</font>https://docs.unity3d.com/ScriptReference/UIElements.Toolbar.html
 
 描述：工具窗口的工具栏
 
+```c#
+MyGraphView graphView;
+ObjectField objectField;
+public SerializeData scenarioData { get { return (SerializeData)objectField.value; } }
+//ーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーー 
+[MenuItem("Tool/22-ScriptGraph")]
+public static void Open()
+{
+GetWindow<GraphWindow>("Node Editor");
+}
+//ーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーー
+void OnEnable()
+{
+//工具栏
+Toolbar toolbar = new Toolbar();
+toolbar.style.flexDirection = FlexDirection.Row;
+
+//文件路径
+objectField = new ObjectField();
+objectField.objectType = typeof(SerializeData);
+Button loadBtn = new Button(LoadData) { text = "加載" };
+Button saveBtn = new Button(SaveData) { text = "保存" };
+
+
+toolbar.Add(objectField);
+toolbar.Add(loadBtn);
+toolbar.Add(saveBtn);
+rootVisualElement.Add(toolbar);
+
+
+//Graph View
+graphView = new MyGraphView(this)
+{
+    style = { flexGrow = 1 }
+};
+rootVisualElement.Add(graphView);
+}
+```
+
 <font color=#bc8df9>ObjectField：</font>https://docs.unity3d.com/ScriptReference/Search.ObjectField.html
 
+#### 2.3 LoadData
+
+加载数据，首先需要清除<font color=#bc8df9>Graph View</font>中的所有的元素，随后遍历文件中所有的<font color=#4db8ff>Node 和 Edge</font>，将其逐一添加到<font color=#bc8df9>Graph View</font>
+
+```c#
+void LoadData()
+{
+    if (scenarioData == null) return;
+    //清除所有元素
+    graphView.DeleteAllElements();
+
+    //遍历Node 和 Edge
+    foreach (var nodeData in scenarioData.nodeData_list)
+    {
+        graphView.LoadNodeData(nodeData);
+    }
+    foreach (var edgeData in scenarioData.edgeData_list)
+    {
+        graphView.LoadEdgeData(edgeData);
+    }
+
+    Debug.Log($"加载好了");
+}
+```
+
+#### 2.4 SaveData
+
+保存数据，则需要先将<font color=#FFCE70>SOBJ</font>数据清空，随后逐渐遍历<font color=#bc8df9>Graph View</font>中的所有的元素，随后遍历文件中所有的<font color=#4db8ff>Node 和 Edge</font>，将其逐一添加到<font color=#FFCE70>SOBJ</font>文件中
+
+```c#
+void SaveData()
+{
+    if (scenarioData == null) return;
+
+    scenarioData.nodeData_list.Clear();
+    scenarioData.edgeData_list.Clear();
 
 
-#### 2.2 MyGraphView.cs
+
+    //遍历graph view 中的所有元素 包括 Node 和 edge
+    foreach (var graphElement in graphView.graphElements)
+    {
+        if (graphElement is MU5Node) 
+            SaveData_Node(graphElement);
+        else if (graphElement is Edge) 
+            SaveData_Edge(graphElement);
+        else
+            Debug.LogWarning($"Find a non-surported graphElement type: {graphElement.GetType()}");
+    }
+
+    EditorUtility.SetDirty(objectField.value);
+    AssetDatabase.SaveAssets();
+
+    Debug.Log($"保存完了");
+}
+```
+
+其中存储<font color=#4db8ff>Node</font>和<font color=#4db8ff>Edge</font>的方法大差不差
+
+```c#
+void SaveData_Node(GraphElement _graphElement)
+{
+    MU5Node node = _graphElement as MU5Node;
+
+
+    NodeData nodeData = new NodeData()
+    {
+        uid = node.uid,
+        nodeType_str = node.GetType().ToString(),
+        localBound = node.localBound
+    };
+
+    //存入序列化文件
+    scenarioData.nodeData_list.Add(nodeData);
+}
+
+void SaveData_Edge(GraphElement _graphElement)
+{
+    Edge edge = _graphElement as Edge;
+
+
+    Port inputPort = edge.input;
+    Port outputPort = edge.output;
+    MU5Node inputNode = edge.input.node as MU5Node;
+    MU5Node outputNode = edge.output.node as MU5Node;
+
+    string uid_inputPort_target = inputNode.port_dict.FirstOrDefault(x => x.Value.Equals(inputPort)).Key;
+    string uid_outputPort_target = outputNode.port_dict.FirstOrDefault(x => x.Value.Equals(outputPort)).Key;
+
+    EdgeData edgeData = new EdgeData()
+    {
+        uid_outputNode = outputNode.uid,
+        uid_outputPort = uid_outputPort_target,
+        uid_inputNode = inputNode.uid,
+        uid_inputPort = uid_inputPort_target
+    };
+
+
+    //存入序列化文件
+    scenarioData.edgeData_list.Add(edgeData);
+}
+```
+
+<font color=#4db8ff>GetType Link：</font>https://learn.microsoft.com/en-us/dotnet/api/system.object.gettype?view=net-7.0
+
+<font color=#bc8df9>字典 Dictionary：</font>https://learn.microsoft.com/en-us/dotnet/api/system.collections.generic.dictionary-2?view=net-7.0
+
+<font color=#bc8df9>FirstOrDefault Method：</font>https://learn.microsoft.com/en-us/dotnet/api/system.linq.enumerable.firstordefault?view=net-7.0
+
+<font color=#4db8ff>描述：</font>Returns the first element of a sequence, or a default value if no element is found.
+
+利用字典序列化，其中利用<font color=#66ff66>String</font>去获取<font color=#bc8df9>Port</font>
+
+
+
+#### 2.5 MyGraphView.cs
 
 ```C#
 using System;
@@ -279,6 +433,50 @@ namespace MU5Editor.NodeEditor
     }
 }
 ```
+
+其中利用搜索树接口去查找文件与节点
+
+```c#
+//搜索树结构
+SearchWindowProvider searchWindowProvider = ScriptableObject.CreateInstance(typeof(SearchWindowProvider)) as SearchWindowProvider;
+searchWindowProvider.Initialize(this, graphWindow);
+
+nodeCreationRequest += context =>
+{
+SearchWindow.Open(new SearchWindowContext(context.screenMousePosition), searchWindowProvider);
+};
+```
+
+2.6 Load Data
+
+其中加载数据的方法被写在文件中，作为<font color=#bc8df9>Graph View</font>的函数
+
+```c#
+//加载 node 数据
+public void LoadNodeData(NodeData nodeData)
+{
+    //返回符合参数的构造函数所创建的实例
+    MU5Node node = (MU5Node)Activator.CreateInstance(nodeData.nodeType);
+
+    //传递数据 到 node 中
+    node.LoadData(nodeData);
+    AddElement(node);
+}
+```
+
+首先获得符合<font color=#4db8ff>Node</font>类型的实例，随后传递数据给实例，再将其添加到<font color=#bc8df9>Graph View</font>
+
+<font color=#bc8df9>Activator：</font>https://learn.microsoft.com/en-us/dotnet/api/system.activator?view=net-7.0
+
+<font color=#4db8ff>Activator.CreateInstance Method：</font>https://learn.microsoft.com/en-us/dotnet/api/system.activator.createinstance?view=net-7.0
+
+<font color=#66ff66>describe ：</font> Creates an instance of the specified type using the constructor that best matches the specified parameters.
+
+使用与指定参数最匹配的构造函数创建指定类型的实例。
+
+具体方法为
+
+
 
 #### 2.3 SearchWindowProvider.cs
 
