@@ -1,5 +1,7 @@
 <font color=#4db8ff>Link：</font>https://qiita.com/mu5dvlp/items/4b2286584b08d582474c
 
+<font color=#4db8ff>关于搜索树反射 Link ：</font>https://zhuanlan.zhihu.com/p/650274861
+
 ### 一、ポイント
 
 #### 1.1 数据
@@ -447,7 +449,7 @@ SearchWindow.Open(new SearchWindowContext(context.screenMousePosition), searchWi
 };
 ```
 
-2.6 Load Data
+#### 2.6 Load Node
 
 其中加载数据的方法被写在文件中，作为<font color=#bc8df9>Graph View</font>的函数
 
@@ -474,11 +476,50 @@ public void LoadNodeData(NodeData nodeData)
 
 使用与指定参数最匹配的构造函数创建指定类型的实例。
 
-具体方法为
+#### 2.7 Load Edge
+
+```c#
+//加载链接数据
+public void LoadEdgeData(EdgeData edgeData)
+{
+    Edge edge = new Edge();
+
+    //UID匹配 Node
+    MU5Node outputNode = GetMU5NodeByUid(edgeData.uid_outputNode);
+    MU5Node inputNode = GetMU5NodeByUid(edgeData.uid_inputNode);
 
 
+    //创建链接
+    edge.output = outputNode.port_dict[edgeData.uid_outputPort];
+    outputNode.port_dict[edgeData.uid_outputPort].Connect(edge);
+    edge.input = inputNode.port_dict[edgeData.uid_inputPort];
+    inputNode.port_dict[edgeData.uid_inputPort].Connect(edge);
 
-#### 2.3 SearchWindowProvider.cs
+
+    AddElement(edge);
+}
+
+
+//遍历匹配UID
+public MU5Node GetMU5NodeByUid(string _uid)
+{
+    MU5Node node = null;
+
+    //查找匹配的UID
+    foreach (var graphElement in graphElements)
+    {
+        MU5Node _node = graphElement as MU5Node;
+        if (_node == null) continue;
+        if (_node.uid != _uid) continue;
+
+        node = _node;
+        break;
+    }
+    return node;
+}
+```
+
+#### 2.8 SearchWindowProvider.cs
 
 ```C#
 using System;
@@ -536,13 +577,86 @@ namespace MU5Editor.NodeEditor
 }
 ```
 
-### 三、ノード系
+搜索树结构添加到<font color=#bc8df9>Graph View </font>中需要先获取实例，可以通过初始化函数完成，在创建<font color=#bc8df9>SearchTreeEntry</font>的时候传递过去
+
+```c#
+private MyGraphView graphView;
+private GraphWindow graphWindow;
+
+public void Initialize(MyGraphView graphView, GraphWindow graphWindow)
+{
+    this.graphView = graphView;
+    this.graphWindow = graphWindow;
+}
+```
+
+#### 2.9 SearchTreeEntry
+
+<font color=#66ff66>Scripts</font>继承<font color=#bc8df9>ISearchWindowProvider</font>既可以使用<font color=#66ff66>CreateSearchTree</font>去创建搜索树，随后利用<font color=#FFCE70>Domain</font>判断
+
+<font color=#66ff66>CreateSearchTree：</font>用于加入搜索列表容器中
+
+<font color=#66ff66>OnSelectEntry：</font>大部分用于空间转换到<font color=#bc8df9>Graph View</font>
+
+```c#
+//Search Tree Entry
+//返回搜索窗口中显示的SearchTreeEntry对象列表
+List<SearchTreeEntry> ISearchWindowProvider.CreateSearchTree(SearchWindowContext context)
+{
+    var entries = new List<SearchTreeEntry>();
+    entries.Add(new SearchTreeGroupEntry(new GUIContent("Create Node")));
+
+    foreach (var assembly in AppDomain.CurrentDomain.GetAssemblies())
+    {
+        foreach (var type in assembly.GetTypes())
+        {
+            if (type.IsClass && !type.IsAbstract && (type.IsSubclassOf(typeof(MU5Node)))
+                && type != typeof(EntryNode) && type != typeof(ExitNode))
+            {
+
+
+                entries.Add(new SearchTreeEntry(new GUIContent(type.Name))
+                {
+                    level = 1, userData = type
+                });
+            }
+        }
+    }
+
+    return entries;
+}
+```
+
+其中利用到了反射的内容
+
+### 三、Reflection
+
+> Type类，用来包含类型的特性。对于程序中的每一个类型，都会有一个包含这个类型的信息的Type类的对象,类型信息包含数据，属性和方法等信息。
+
+根据上述描述我们可以知道，<font color=#bc8df9>Type</font>记录了类的各种信息，那我们接着看下面的foreach循环，首先选择的循环对象是当前程序域<font color="red">AppDomain</font>中所有的程序集<font color="red">Assembly</font>，<font color=#4db8ff>Assembly</font>是什么呢？
+
+#### 3.1 Domain
+
+在前面我们提到<font color=#4db8ff>Assembly</font>类可以获得正在运行的装配件信息，那装配件又是什么呢？似乎这里涉及到的东西一层套一层难以理解，那么我们干脆就从C#程序的构成讲起。
+
+> C#应用程序结构包含 <font color=#FFCE70>应用程序域（AppDomain），程序集（Assembly），模块（Module），类型（Type），成员（EventInfo、FieldInfo、MethodInfo、PropertyInfo</font>） 几个层次
+>    他们之间是一种从属关系，也就是说，一个AppDomain能够包括N个Assembly，一个Assembly能够包括N个Module，一个Module能够包括N个Type，一个Type能够包括N个成员。他们都在System.Reflection命名空间下。
+
+我们先从<font color="red">AppDomain</font>中获取一个个<font color=#4db8ff>Assembly</font>，获取到某一个Assembly后我们调用<font color=#bc8df9>GetTypes</font>获取到当前程序集中所有的Type也就是获取到所有的类，此方法的返回值是一个数组
+
+之后我们使用Where查找返回所有符合要求的类，这个属于C# Linq的内容我们之后在讲，<font color="red">总之Where的作用就是构造并返回符合给定要求的可枚举列表</font>，简单来说就是起到了一个筛选的作用
+
+在这里我们给定的要求是，首先要是一个类，其次，这个类不能是抽象类，最后，这个类要是节点基类的子类。这样一来我们就获取到了所有的非抽象类的节点类。最后这个Assembly的节点类获取完后我们就去找下一个<font color=#bc8df9>Assembly</font>的节点类，直到我们找到了所有的节点类。
+
+看，反射就是如此神奇，我们不用手动去找所有的节点类，只需要依靠反射就能够找到项目中所有我们定义的节点。找到所有的节点之后我们就可以进行下一步操作了，即去获取我们在节点声明的属性BTNodeAttribute中的内容了。
+
+### 四、ノード系
 
 吹毛求疵地说，<font color=#FFCE70>Port Class</font>显然不是为继承而设计的。但是，我希望在<font color=#4db8ff>Port</font>发生 "字段名称更改"、"顺序更改 "或 "增加/减少 "时，数据不会被破坏。
 
 因此，我不想创建 MyPort 或类似的东西，而是想在节点上用字典来管理它。换句话说，<font color="red">uid </font>变成了关键字。这次，uid 是根据特定规则分配的，但您也可以根据自己的操作来分配 uid。
 
-#### 3.1 MU5Node.cs
+#### 4.1 MU5Node.cs
 
 ```C#
 using System.Collections.Generic;
@@ -578,7 +692,7 @@ namespace MU5Editor.NodeEditor
 }
 ```
 
-#### 3.2 EntryNode.cs
+#### 4.2 EntryNode.cs
 
 ```C#
 using System.Collections.Generic;
@@ -616,7 +730,7 @@ namespace MU5Editor.NodeEditor
 }
 ```
 
-#### 3.3 ExitNode.cs
+#### 4.3 ExitNode.cs
 
 ```C#
 using System.Collections.Generic;
@@ -654,7 +768,7 @@ namespace MU5Editor.NodeEditor
 }
 ```
 
-#### 3.4 SampleNode.cs
+#### 4.4 SampleNode.cs
 
 ```C#
 using System;
@@ -718,11 +832,11 @@ namespace MU5Editor.NodeEditor
 }
 ```
 
-### 四、データ系
+### 五、データ系
 
 类名为 <font color=#66ff66>ScenarioData</font>，因为我想为一款小说游戏开发它。我认为你可以使用 <font color="red">NodeGraphData </font>或类似的东西来做一般用途。(在这种情况下，您也应该更改在其他类中使用的 ScenarioData 名称）。
 
-#### 4.1 ScenarioData.cs
+#### 5.1 ScenarioData.cs
 
 ```C#
 using System;
@@ -762,11 +876,11 @@ namespace MU5Editor.NodeEditor
 }
 ```
 
-### 五、その他
+### 六、その他
 
 如果只是这一次，我想我就没有必要用不同的方式来制作它，但我还是要重复一下解释：这是一个为小说游戏开发的节点编辑器，所以我想要一个类似实用工具的类...所以我把 <font color="red">uid </font>生成放在了这里。
 
-#### 5.1 MU5Utility
+#### 6.1 MU5Utility
 
 ```C#
 using System.Collections;
@@ -810,7 +924,7 @@ namespace MU5Editor
 
 <img src="assets/https%253A%252F%252Fqiita-image-store.s3.ap-northeast-1.amazonaws.com%252F0%252F2607452%252F4346aa17-d244-aeb8-c89a-a14fa6d0db70.pngixlib=rb-4.0.png" alt="スクリーンショット 2022-10-07 23.34.23.png" style="zoom:50%;" />
 
-### 六、まとめ
+### 七、まとめ
 
 怎么样？在这篇文章中，我们介绍了 Node Editor 的实现和还原。像这篇文章一样，我们将介绍从高级内容到针对 Unity 初学者的内容等各种内容。
 如果你喜欢，请评价并关注我们。
