@@ -903,4 +903,107 @@ _targetGraphView.defaultNodeSize));
 
 编辑链接方法<font color=#bc8df9>LinkNodes</font>
 
-先将输出，输入节点缓存
+先将输出，输入节点缓存，随后创建<font color=#66ff66>Edge</font>，创建链接，添加到<font color=#bc8df9>Graph View</font>
+
+```c#
+//节点连接
+private void LinkNodes(Port output, Port input)
+{
+  var tempEdge = new Edge
+  {
+     output = output,
+     input = input
+  };
+
+  tempEdge?.input.Connect(tempEdge);
+  tempEdge?.output.Connect(tempEdge);
+
+  _targetGraphView.Add(tempEdge);
+}
+```
+
+<font color=#bc8df9>Edge：</font>https://docs.unity3d.com/ScriptReference/Experimental.GraphView.Edge.html
+
+
+
+#### 2.11 Dialogue Text
+
+对于对话内容，我们做法与<font color=#FFCE70>Port</font>类似，随后传递对话值
+
+```c#
+//文本框
+var textField = new TextField(string.Empty);
+textField.RegisterValueChangedCallback(evt =>
+{
+    dialogueNode.DialogueText = evt.newValue;
+    dialogueNode.title = evt.newValue;
+});
+
+textField.SetValueWithoutNotify(dialogueNode.title);
+dialogueNode.mainContainer.Add(textField);
+```
+
+<font color=#4db8ff>set：</font>https://docs.unity3d.com/ScriptReference/30_search.html?q=UIElements.TextField.SetValueWithoutNotify
+
+#### 2.12 USS
+
+```c#
+Dialogue #title {
+    background-color: rgb(0, 128, 0);
+}
+```
+
+C#
+
+```c#
+var dialogueNode = new DialogueNode()
+{
+    title = nodeName,  
+    DialogueText = nodeName,
+    GUID = Guid.NewGuid().ToString()
+};
+dialogueNode.styleSheets.Add(Resources.Load<StyleSheet>("Node"));
+```
+
+![image-20231006213240194](assets/image-20231006213240194.png)
+
+#### 2.13 Entry UnDelete
+
+```c#
+private DialogueNode GenerateEntryPointNode()
+{
+    var node = new DialogueNode()
+    {
+            title = "start",
+            GUID = Guid.NewGuid().ToString(),
+            DialogueText = "ENTRYPOINT",
+            EntryPoint = true
+    };
+
+    var generatedPort = GeneratePort(node, Direction.Output);
+    generatedPort.portName = "Next";
+    node.outputContainer.Add(generatedPort);
+
+    //入口不可删除,不可移动
+    node.capabilities &= ~Capabilities.Movable;
+    node.capabilities &= ~Capabilities.Deletable;
+
+    //Refresh node Status
+    node.RefreshExpandedState();
+    node.RefreshPorts();
+
+    node.SetPosition(new Rect(100,200,100,150));
+
+    return node;
+}
+```
+
+<font color=#4db8ff>Capabilities ：</font>https://docs.unity3d.com/ScriptReference/30_search.html?q=Experimental.GraphView.Capabilities
+
+#### 2.14 mini-Map
+
+mini-map 嵌套自<font color=#bc8df9>Graph view API</font>
+
+
+
+<font color=#4db8ff>Link：</font>https://docs.unity3d.com/ScriptReference/30_search.html?q=Experimental.GraphView.MiniMap.ctor
