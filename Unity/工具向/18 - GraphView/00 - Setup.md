@@ -1004,6 +1004,634 @@ private DialogueNode GenerateEntryPointNode()
 
 mini-map 嵌套自<font color=#bc8df9>Graph view API</font>
 
+```c#
+//DialogueGraph
+private void OnEnable()
+{
+    //Tool Graph Virw
+    ConstructGraphView();
+    GenerateToolbar();
 
+    GenerateMiniMap();
+}
+
+private void GenerateMiniMap()
+{
+    var minimap = new MiniMap
+    {
+        anchored = true,
+    };
+
+    minimap.SetPosition(new Rect(10,30,200,140));
+    _graphView.Add(minimap);
+}
+```
 
 <font color=#4db8ff>Link：</font>https://docs.unity3d.com/ScriptReference/30_search.html?q=Experimental.GraphView.MiniMap.ctor
+
+
+
+### 三、Search Window
+
+#### 3.1 Entry
+
+创建搜索树脚本，并且继承两个类<font color=#bc8df9>ScriptableObject,ISearchWindowProvider</font>，实现他们的基础函数方法
+
+```c#
+using System.Collections.Generic;
+using UnityEditor.Experimental.GraphView;
+using UnityEngine;
+
+public class NodeSearchWindow : ScriptableObject,ISearchWindowProvider
+{
+    public List<SearchTreeEntry> CreateSearchTree(SearchWindowContext context)
+    {
+        throw new System.NotImplementedException();
+    }
+
+    public bool OnSelectEntry(SearchTreeEntry SearchTreeEntry, SearchWindowContext context)
+    {
+        throw new System.NotImplementedException();
+    }
+}
+```
+
+在<font color=#bc8df9>Graph View</font>中加入对于搜索树条目的调用，在<font color=#4db8ff>DialogueGraphView</font>的构造函数中使用他
+
+```c#
+//添加到Graph View 基类
+AddElement(GenerateEntryPointNode());
+AddSearchWindow();
+```
+
+利用回调函数初始化搜索树条目，参数为当前鼠标的位置，以及搜索树条目
+
+```c#
+public void AddSearchWindow()
+{
+    _searchWindow = ScriptableObject.CreateInstance<NodeSearchWindow>();
+    nodeCreationRequest = context => SearchWindow.Open(
+        new SearchWindowContext(context.screenMousePosition),_searchWindow);
+}
+```
+
+<font color=#4db8ff>GraphView.nodeCreationRequest _：</font>https://docs.unity3d.com/ScriptReference/Experimental.GraphView.GraphView-nodeCreationRequest.html
+
+#### 3.2 User Data
+
+在搜索树树函数中对每个类的对象进行分类，以此来获取不同的分组以及层级，利用反射结构去筛选<font color=#66ff66>Node</font>
+
+```c#
+public List<SearchTreeEntry> CreateSearchTree(SearchWindowContext context)
+{
+    var tree = new List<SearchTreeEntry>
+    {
+        new SearchTreeGroupEntry(new GUIContent("Create Elements"), 0),
+        new SearchTreeGroupEntry(new GUIContent("Dialogue"), 1),
+
+        //反射结构
+        new SearchTreeEntry(new GUIContent("Dialogue Node"))
+        {
+            //注入数据
+            // userData = typeof(DialogueNode),level = 2
+            userData = new DialogueNode(),level = 2
+        },
+
+
+        new SearchTreeGroupEntry(new GUIContent("Branch Node"), 1)
+    };
+    return tree;
+}
+```
+
+#### 3.3 OnSelectEntry
+
+需要筛选<font color=#4db8ff>Node</font>，使用<font color=#66ff66>UserData</font>来检查，其中<font color=#66ff66>UserData</font>在创建<font color=#bc8df9>SearchTreeGroupEntry</font>时注入，随后在<font color=#66ff66>OnSelectEntry</font>函数中被检查，以此去获得不同的节点
+
+```c#
+public bool OnSelectEntry(SearchTreeEntry SearchTreeEntry, SearchWindowContext context)
+{
+    switch (SearchTreeEntry.userData)
+    {
+        case DialogueNode dialogueNode:
+            Debug.Log("DIALOGUE NODE CREATED!!!");
+            return true;
+        default:
+            return false;
+    }
+}
+```
+
+由于<font color=#4db8ff>Node</font>需要添加到<font color=#bc8df9>Graph View</font>中，因此需要过去相关的数据，可以添加一个<font color=#66ff66>Init</font>函数
+
+```c#
+private DialogueGraphView _graphView;
+private EditorWindow _windowindow;
+
+public void Initialize(DialogueGraphView graphView, EditorWindow window)
+{
+    this._graphView = graphView;
+    this._windowindow = window;
+}
+```
+
+由<font color=#bc8df9>Graph View</font>的构造函数中传递<font color=#bc8df9>editorWindow</font>，随后在<font color=#66ff66>AddSearchWindow</font>中调用
+
+```c#
+public DialogueGraphView(EditorWindow editorWindow)
+{
+	...
+    AddSearchWindow(editorWindow);
+}
+...
+public void AddSearchWindow(EditorWindow editorWindow)
+{
+    _searchWindow = ScriptableObject.CreateInstance<NodeSearchWindow>();
+    _searchWindow.Initialize(this, editorWindow);
+
+    nodeCreationRequest = context => SearchWindow.Open(
+        new SearchWindowContext(context.screenMousePosition),_searchWindow);
+}
+```
+
+#### 3.4 Position
+
+随后在<font color=#66ff66>OnSelectEntry</font>中将<font color=#4db8ff>Node</font>添加到<font color=#bc8df9>Graph view</font>。但是这个时候<font color=#4db8ff>Node</font>不是生成在鼠标所在的位置，因此需要修改函数<font color=#66ff66>CreateNode</font>
+
+首先需要获得<font color=#bc8df9>Graph view</font>空间下的鼠标位置，因此需要一些空间换算
+
+```c#
+public bool OnSelectEntry(SearchTreeEntry SearchTreeEntry, SearchWindowContext context)
+{
+    //位置换算
+    var worldMousePosition = _windowindow.rootVisualElement.ChangeCoordinatesTo(
+        _windowindow.rootVisualElement.parent,
+        context.screenMousePosition - _windowindow.position.position);
+    var localMousePosition = _graphView.contentViewContainer.WorldToLocal(worldMousePosition);
+
+    switch (SearchTreeEntry.userData)
+    {
+        case DialogueNode dialogueNode:
+            _graphView.CreateNode("Dialogue Node",localMousePosition);
+            return true;
+        default:
+            return false;
+    }
+}
+```
+
+所有的<font color=#4db8ff>Node</font>的创建方法都得随着更改，<font color=#FFCE70>CreateNode</font>
+
+```c#
+//添加节点到Graph view ，同时创建node
+public void CreateNode(String nodeName, Vector2 positon)
+{
+    AddElement(CreateDialogueNode(nodeName, positon));
+}
+```
+
+<font color=#66ff66>CreateDialogueNode</font>函数也一样
+
+```c#
+public DialogueNode CreateDialogueNode(String nodeName, Vector2 positon)
+{
+    var dialogueNode = new DialogueNode()
+    {
+        title = nodeName,  
+        DialogueText = nodeName,
+        GUID = Guid.NewGuid().ToString()
+    };
+
+    ...
+
+    //刷新节点
+    dialogueNode.RefreshExpandedState();
+    dialogueNode.RefreshPorts();
+    dialogueNode.SetPosition(new Rect(positon, defaultNodeSize));
+    return dialogueNode;
+}
+```
+
+随后调整固定<font color=#4db8ff>Node</font>的生成方式
+
+```c#
+private void CreateNodes() 
+{
+    foreach (var nodeData in _ContainerCache.DialogueNodeData)
+    {
+        //创建节点
+        var tempNode = _targetGraphView.CreateDialogueNode(nodeData.DialogueText,UnityEngine.Vector2.zero);
+      ...
+    }
+}
+```
+
+####  3.5 Texture2D
+
+可以为搜索树条目中增加<font color=#FFCE70>Icon</font>
+
+![image-20231007153908021](assets/image-20231007153908021.png)
+
+可以自己创建一张测试
+
+```c#
+//NodeSearchWindow
+private DialogueGraphView _graphView;
+private EditorWindow _windowindow;
+private Texture2D _indentatioinIcon;
+
+public void Initialize(DialogueGraphView graphView, EditorWindow window)
+{
+    this._graphView = graphView;
+    this._windowindow = window;
+
+    //Indentation hack for search window as a transparent icon
+    _indentatioinIcon = new Texture2D(1, 1);
+    _indentatioinIcon.SetPixel(0,0,new Color(0,0,0,0),0);
+    //copy to GPU use
+    _indentatioinIcon.Apply();
+}
+```
+
+<font color=#4db8ff>Tex Link：</font>https://docs.unity3d.com/ScriptReference/Texture2D.Apply.html
+
+在筛选<font color=#66ff66>Type（）</font>时候应用<font color=#FFCE70>Icon</font>
+
+```c#
+//反射结构
+new SearchTreeEntry(new GUIContent("Dialogue Node",_indentatioinIcon))
+{
+    //注入数据
+    // userData = typeof(DialogueNode),level = 2
+    userData = new DialogueNode(),level = 2
+},
+```
+
+![image-20231007154351992](assets/image-20231007154351992.png)
+
+#### 3.6 Tool Bar
+
+在<font color=#FFCE70>DialogueGraph</font>的<font color=#66ff66>OnEnable</font>方法中添加一个函数去创建<font color=#bc8df9>Blackboard</font>
+
+```c#
+private void OnEnable()
+{
+    //Tool Graph Virw
+    ConstructGraphView();
+    GenerateToolbar();
+    GenerateMiniMap();
+    GenerateBlackBoard();
+}
+```
+
+<font color=#4db8ff>Blackboard Link：</font>https://docs.unity3d.com/ScriptReference/30_search.html?q=Experimental.GraphView.Blackboard.ctor
+
+![image-20231007155451307](assets/image-20231007155451307.png)
+
+```c#
+private void GenerateBlackBoard()
+{
+    var blackBorad = new Blackboard(_graphView);
+    blackBorad.Add(new BlackboardSection
+                   {
+                       title = "Exposed Properties"
+                   });
+    blackBorad.addItemRequested = _blackBorad =>
+    {
+        // _graphView.AddPropertyToBlackBoard();
+    };
+    blackBorad.SetPosition(new Rect(10,30,200,300));
+    _graphView.Add(blackBorad);
+}
+```
+
+#### 3.7 Add Property
+
+需要将参数从<font color=#bc8df9>Graph View</font>中添加到<font color=#66ff66>Blackboard</font>中，需要创建一个新的<font color=#4db8ff>class</font>进行管理
+
+```C#
+[System.Serializable]
+public class ExposeProperty
+{
+    public string PropertyName = "New Name";
+    public string PropertyValue = "New Value";
+}
+```
+
+随后在<font color=#bc8df9>Dialogue Graph</font>中管理，并且使用<font color=#4db8ff>List</font>管理
+
+```c#
+public readonly Vector2 defaultNodeSize = new Vector2(250,200);
+public List<ExposeProperty> ExposeProperties = new List<ExposeProperty>();
+private NodeSearchWindow _searchWindow;
+...
+
+public void AddPropertyToBlackBoard(ExposeProperty exposeProperty)
+{
+    var property = new ExposeProperty();
+    property.PropertyName = exposeProperty.PropertyName;
+    property.PropertyValue = exposeProperty.PropertyValue;
+    ExposeProperties.Add(property);
+
+    var container = new VisualElement();
+    var blackboard = new BlackboardField
+    {
+        text = property.PropertyName,
+        typeText = "string property"
+    };
+
+    container.Add(blackboard);
+    Blackboard.Add(container);
+}
+```
+
+函数在<font color=#bc8df9>Dialogue Graph</font>的<font color=#66ff66>GenerateBlackBoard</font>中调用
+
+```c#
+private void GenerateBlackBoard()
+{
+    var blackBorad = new Blackboard(_graphView);
+    blackBorad.Add(new BlackboardSection
+                   {
+                       title = "Exposed Properties"
+                   });
+    blackBorad.addItemRequested = _blackBorad =>
+    {
+        _graphView.AddPropertyToBlackBoard(new ExposeProperty());
+    };
+    blackBorad.SetPosition(new Rect(10,30,200,300));
+
+
+    _graphView.Add(blackBorad);
+    _graphView.Blackboard = blackBorad;
+}
+```
+
+但是<font color=#FFCE70>Property</font>也有一些属性，可以给它添加容器，去承载属性
+
+```c#
+container.Add(blackboard);
+
+//Value
+var propertyValueTextField = new TextField("Value")
+{
+    value = property.PropertyValue,
+};
+propertyValueTextField.RegisterValueChangedCallback(evt =>
+                                                    {
+                                                        var changingPropertyIndex = ExposeProperties.FindIndex
+                                                            (x => x.PropertyName == property.PropertyName);
+                                                        ExposeProperties[changingPropertyIndex].PropertyValue = evt.newValue;
+                                                    });
+
+//parent children
+var blackBoarValueRow = new BlackboardRow(blackboard, propertyValueTextField);
+container.Add(blackBoarValueRow);
+```
+
+<font color=#4db8ff>BlackboardRow Link：</font>https://docs.unity3d.com/ScriptReference/30_search.html?q=Experimental.GraphView.BlackboardRow.ctor
+
+![image-20231007170905761](assets/image-20231007170905761.png)
+
+#### 3.8 Property Name 
+
+需要将一系列参数缓存，
+
+```C#
+public void AddPropertyToBlackBoard(ExposeProperty exposeProperty)
+{
+    var localPropertyName = exposeProperty.PropertyName;
+    var localPropertyValue = exposeProperty.PropertyValue;
+
+    while (ExposeProperties.Any(x => x.PropertyName == localPropertyName))
+        localPropertyName = $"{localPropertyName}1";  //USERname(1) ||USERname(1)(1) ETC...
+    
+    
+    var property = new ExposeProperty();
+    property.PropertyName = localPropertyName;
+    property.PropertyValue = localPropertyValue;
+    ExposeProperties.Add(property);
+
+    var container = new VisualElement();
+    var blackboard = new BlackboardField
+    {
+        text = localPropertyName,
+        typeText = "string property"
+    };
+    
+    container.Add(blackboard);
+
+    //Value
+    var propertyValueTextField = new TextField("Value")
+    {
+        value = localPropertyValue,
+    };
+    propertyValueTextField.RegisterValueChangedCallback(evt =>
+    {
+        var changingPropertyIndex = ExposeProperties.FindIndex
+            (x => x.PropertyName == property.PropertyName);
+        ExposeProperties[changingPropertyIndex].PropertyValue = evt.newValue;
+    });
+    
+    //parent children
+    var blackBoarValueRow = new BlackboardRow(blackboard, propertyValueTextField);
+    container.Add(blackBoarValueRow);
+    
+    Blackboard.Add(container);
+}
+```
+
+随后利用回调函数进行保存
+
+```C#
+private void GenerateBlackBoard()
+{
+    var blackBorad = new Blackboard(_graphView);
+    blackBorad.Add(new BlackboardSection
+    {
+        title = "Exposed Properties"
+    });
+    //Add 
+    blackBorad.addItemRequested = _blackBorad =>
+    {
+        _graphView.AddPropertyToBlackBoard(new ExposeProperty());
+    };
+    blackBorad.SetPosition(new Rect(10,30,200,300));
+    //Blackboard, VisualElement, string
+    blackBorad.editTextRequested = (blackboard, element, arg3) =>
+    {
+        var oldPropertyName = ((BlackboardField)element).text;
+    };
+```
+
+其中<font color=#66ff66>element</font>的text在<font color=#4db8ff>AddPropertyToBlackBoard</font>中等于缓存的<font color=#FFCE70>Property Name</font>
+
+```c#
+var blackboard = new BlackboardField
+{
+    text = localPropertyName,
+    typeText = "string property"
+};
+```
+
+<font color=#4db8ff>editTextRequested：</font>https://docs.unity3d.com/ScriptReference/Experimental.GraphView.Blackboard-editTextRequested.html
+
+在回调函数中检查<font color="red"> new Name</font>是否有和其他参数重复
+
+```c#
+blackBorad.SetPosition(new Rect(10,30,200,300));
+//Blackboard, VisualElement, string
+blackBorad.editTextRequested = (blackboard, element, NewValue) =>
+{
+    var oldPropertyName = ((BlackboardField)element).text;
+    if (_graphView.ExposeProperties.Any(x => x.PropertyName == NewValue))
+    {
+        EditorUtility.DisplayDialog("Error", "This property name already exists, please chose another one!",
+                                    "ok");
+        return;
+    }
+};
+```
+
+但是这样会改变不了变量名，可以通过<font color=#66ff66>Index</font>去修改变量
+
+```c#
+blackBorad.editTextRequested = (blackboard, element, NewValue) =>
+{
+    var oldPropertyName = ((BlackboardField)element).text;
+    if (_graphView.ExposeProperties.Any(x => x.PropertyName == NewValue))
+    {
+        EditorUtility.DisplayDialog("Error", "This property name already exists, please chose another one!",
+                                    "ok");
+        return;
+    }
+
+    var propertyIndex = _graphView.ExposeProperties.FindIndex(x => x.PropertyName == oldPropertyName);
+    _graphView.ExposeProperties[propertyIndex].PropertyName = NewValue;
+    ((BlackboardField)element).text = NewValue;
+};
+```
+
+#### 3.9 Save Property
+
+首先需要判断是否保存了<font color=#4db8ff>Node</font>
+
+```c#
+public void SaveGraph(string fileName)
+{
+    //创建一个新的对话容器
+    var dialogueContainer = ScriptableObject.CreateInstance<DialogueContainer>();
+
+    if (!SaveNodes(dialogueContainer)) return;
+    SaveExposeProperties(dialogueContainer);
+
+    if (!AssetDatabase.IsValidFolder("Assets/Resources"))
+        AssetDatabase.CreateFolder("Assets", "Resources");
+
+    AssetDatabase.CreateAsset(dialogueContainer,$"Assets/Resources/{fileName}.asset");
+    AssetDatabase.SaveAssets();      
+
+}
+
+private bool SaveNodes(DialogueContainer dialogueContainer)
+{
+    if (!Edges.Any()) return false;  //no edges( no connections ) then return
+
+    //过滤一个序列
+    var connectedPorts = Edges.Where(x => x.input.node != null).ToArray();
+
+    //Edge Link Data
+    for (int i = 0; i < connectedPorts.Length; i++)
+    {
+        var outputNode = connectedPorts[i].output.node as DialogueNode;
+        var inputNode = connectedPorts[i].input.node as DialogueNode;
+
+        //保存标识符
+        dialogueContainer.Nodelinks.Add(new NodeLinkData
+                                        {
+                                            BaseNodeGuid = outputNode.GUID,
+                                            PortName = connectedPorts[i].output.portName,
+                                            TargetNodeGuid = inputNode.GUID
+                                        });
+    }
+
+    //Node Data Nodes Data
+    foreach (var dialogueNode in Nodes.Where(node=>!node.EntryPoint))
+    {
+        //传递到容器中
+        dialogueContainer.DialogueNodeData.Add(new DialogueNodeData
+                                               {
+                                                   Guid = dialogueNode.GUID,
+                                                   DialogueText = dialogueNode.DialogueText,
+                                                   Position = dialogueNode.GetPosition().position
+                                               });
+    }
+
+    return true;
+}
+```
+
+当<font color=#4db8ff>Node</font>保存完成之后，我们保存<font color=#FFCE70>Properties</font>，首先需要在容器中添加<font color=#FFCE70>Properties</font>的容器
+
+```c#
+using System;
+using System.Collections.Generic;
+using UnityEngine;
+
+[Serializable]
+public class DialogueContainer : ScriptableObject
+{
+    public List<NodeLinkData> Nodelinks = new List<NodeLinkData>();
+    public List<DialogueNodeData> DialogueNodeData = new List<DialogueNodeData>();
+    public List<ExposeProperty> ExposeProperty = new List<ExposeProperty>();
+}
+```
+
+随后将它保存
+
+```c#
+private void SaveExposeProperties(DialogueContainer dialogueContainer)
+{
+    dialogueContainer.ExposeProperty.AddRange(_targetGraphView.ExposeProperties);
+}
+```
+
+#### 3.10 Load Property
+
+如同其他<font color=#FFCE70>Data</font>一样，在<font color=#66ff66>LoadGraph</font>函数中加载参数
+
+```c#
+//清除、生成、连接 
+ClearGraph();
+CreateNodes();
+ConnectNodes();
+CreateExposeProperties();
+```
+
+需要先清除数据，随后再加载
+
+```c#
+private void CreateExposeProperties()
+{
+    //Clear existing Properties on hot-reload
+    _targetGraphView.ClearBlackBoardAndExposeProperty();
+    //add properties form data
+
+    foreach (var exposeProperty in _ContainerCache.ExposeProperty)
+    {
+        _targetGraphView.AddPropertyToBlackBoard(exposeProperty);
+    }
+}
+```
+
+清除函数<font color=#66ff66>ClearBlackBoardAndExposeProperty</font>，需要清除参数容器，以及<font color=#4db8ff>BlackBoard</font>
+
+```c#
+public void ClearBlackBoardAndExposeProperty()
+{
+    ExposeProperties.Clear();
+    Blackboard.Clear();
+}
+```
+
+![image-20231007180217587](assets/image-20231007180217587.png)
