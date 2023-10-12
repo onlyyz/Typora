@@ -215,7 +215,7 @@ TextField textFile = DSElementUtility.CreateTextArea(DialogueName);
 
 ### 三、Save Data
 
-#### 3.1 Serializable
+#### 3.1 Node Dictionary 
 
 <font color=#4db8ff>Node</font>，使用字典进行保存，利用<font color=#4db8ff>String</font>判断是否存在相同名字的<font color=#4db8ff>Node</font>，因此字典接口如下
 
@@ -402,7 +402,7 @@ public virtual void Draw()
 
 ![image-20231011172036792](assets/image-20231011172036792.png)<font color=#4db8ff>Code Link：</font>https://github.com/onlyyz/Custom/commit/eee8658c2fba70af689b7b3d21d096e619e06b04#diff-796935974d7d4daa2b43a3132da9a613676e45e78fb41c0d561755b1c27fead3
 
-
+#### 3.2 Call Back
 
 但是此时删除<font color=#4db8ff>Node</font>会出现错误，因为删除<font color=#4db8ff>Node</font>，我们并没有将其移除<font color=#66ff66>List</font>中的<font color=#4db8ff>Node</font> 数组，因此需要调整代码 ，可以再次利用回调函数
 
@@ -460,3 +460,507 @@ public DSGraphView(DSEditorWindow dsEditorWindow)
 
 <font color=#4db8ff>Link：</font>https://github.com/onlyyz/Custom/commit/0c4fa65cc08863764ae565a0b28b120246080b52
 
+#### 3.3 Dictionary Group
+
+<font color=#FFCE70> Video 20</font>
+
+其中<font color=#66ff66>group</font>里的<font color=#4db8ff>Node</font>，也应该如此操作，但是此时作用域因该在<font color=#66ff66>group</font>，而与其他<font color=#4db8ff>Node</font>无关
+
+```c#
+public class DSGraphView : GraphView
+{
+    private DSEditorWindow editorWindow;
+    private DSSearchWindow searchWindow;
+
+    private SerializableDictionary<String, DSNodeErrorData> ungroupedNodes;
+    private SerializableDictionary<Group, SerializableDictionary<String, DSNodeErrorData>> groupNodes;
+    public DSGraphView(DSEditorWindow dsEditorWindow)
+    {
+        editorWindow = dsEditorWindow;
+        ungroupedNodes = new SerializableDictionary<string, DSNodeErrorData>();
+        groupNodes = new SerializableDictionary<Group, SerializableDictionary<string, DSNodeErrorData>>();
+    }
+```
+
+其中也是用回调函数进行操作，其中接受两个参数<font color=#bc8df9>Group，Elements</font>
+
+<font color=#4db8ff>elementsAddedToGroup Link：</font>https://docs.unity3d.com/ScriptReference/Experimental.GraphView.GraphView-elementsAddedToGroup.html
+
+首先，我们将<font color=#4db8ff>element</font>从<font color=#bc8df9>Graph view</font>中添加到<font color=#66ff66>Group</font>，这个时候就需要将<font color=#4db8ff>Node</font>从<font color=#bc8df9>Graph view</font>的<font color=#66ff66>List</font>中的<font color=#4db8ff>Node</font> 数组中移除
+
+随后添加到<font color=#66ff66>Group</font>字典中的<font color=#66ff66>List</font>中的<font color=#4db8ff>Node</font> 数组中
+
+同样的当我们从<font color=#66ff66>Group</font>中移除<font color=#4db8ff>Node</font>或者添加到<font color=#bc8df9>Graph view</font>，我们需要进行相反的操作
+
+添加部分，首先遍历<font color="red">selection</font>，选择的<font color=#4db8ff>Node</font>是否是我们允许添加的节点，随后将其从<font color=#66ff66>List</font>中的<font color=#4db8ff>Node</font> 数组中移除，随后再将其冲<font color=#bc8df9>Graph view</font>中移除，随后添加到<font color=#66ff66>Group</font>
+
+1、<font color=#4db8ff>Node</font>类型的判断
+
+```c#
+private void OnGroupElemetAdded()
+        {
+            elementsAddedToGroup = (group, elements) =>
+            {
+                foreach (GraphElement element in elements)
+                {
+                    if (!(element is DSNode))
+                    {
+                        continue;
+                    }
+
+                    DSNode node = (DSNode) element;
+                    RemoveUngroundedNode(node);
+
+                    AddGroupedNode(node,group);
+                }
+            }; 
+        }
+```
+
+与<font color=#66ff66>AddUngroupedNode</font>类似，我们首选判断是否有同名的<font color=#4db8ff>Group</font>，随后在<font color=#4db8ff>List\<Group\> </font>若无则，
+
+初始化一个字典容器去 <font color=#4db8ff>Key</font>为<font color=#66ff66>Group</font>，<font color=#4db8ff>Value</font> 为 字典<font color=#bc8df9>new SerializableDictionary<string, DSNodeErrorData></font>
+
+两次判断，同名<font color=#4db8ff>Group，Node</font>
+
+```c#
+public void AddGroupedNode(DSNode node, Group group)
+{
+    string nodeName = node.DialogueName;
+    //Same name group
+    if (!groupNodes.ContainsKey(group))
+    {
+        groupNodes.Add(group,new SerializableDictionary<string, DSNodeErrorData>());
+    }
+
+    if (!groupNodes[group].ContainsKey(nodeName))
+    {
+        //Colors and the Nodes
+        DSNodeErrorData nodeErrorData = new DSNodeErrorData();
+
+        nodeErrorData.Nodes.Add(node);
+        groupNodes[group].Add(nodeName,nodeErrorData);
+        return;
+    }
+}
+```
+
+其他部分与前面相同设置颜色
+
+```c#
+List<DSNode> groupedNodeList = groupNodes[group][nodeName].Nodes;
+groupedNodeList.Add(node);
+Color errorColor = groupNodes[group][nodeName].ErrorData.Color;
+
+node.SetErrorStyle(errorColor);
+
+if (groupedNodeList.Count == 2)
+{
+    groupedNodeList[0].SetErrorStyle(errorColor);
+}
+```
+
+当<font color=#4db8ff>Node</font>从<font color=#66ff66>Group</font>中移除的时候，我们应该从<font color=#66ff66>Group</font>中移除<font color=#4db8ff>Node</font>，随后将<font color=#4db8ff>Node</font>加入<font color=#bc8df9>Graph view</font>的字典中，这个本质是从<font color=#66ff66>Group</font>删除<font color=#4db8ff>Node</font>，因此可以利用回调函数进行操作
+
+<font color=#4db8ff>elementsRemovedFromGroup：</font>https://docs.unity3d.com/ScriptReference/30_search.html?q=Experimental.GraphView.GraphView.elementsRemovedFromGroup
+
+先筛选出符合条件的<font color=#4db8ff>Node</font>
+
+```c#
+private void OnGroupElementsRemoved()
+{
+    elementsRemovedFromGroup = (group, elements) =>
+    {
+        foreach (GraphElement element in elements)
+        {
+            if (!(element is DSNode)){continue;}
+            DSNode node = (DSNode) element;
+        }
+    };
+}
+```
+
+随后执行以下操作，从<font color="blue">group</font> 中将<font color=#4db8ff>Node</font> 移除并且重置其<font color=#4db8ff>Style</font>
+
+```c#
+//Remove node form group and add to graph view
+RemoveGroupedNode(node,group);
+AddUngroupedNode(node);
+...
+
+public void RemoveGroupedNode(DSNode node, Group group)
+{
+    string nodeName = node.DialogueName;
+    List<DSNode> groupedNodesList = groupNodes[group][nodeName].Nodes;
+    groupedNodesList.Remove(node);
+    node.ResetStyle();
+
+    if (groupedNodesList.Count ==1)
+    {
+        groupedNodesList[0].ResetStyle();   
+        return;
+    }
+
+    if (groupedNodesList.Count ==0)
+    {
+        groupNodes[group].Remove(nodeName);
+        if (groupNodes[group].Count == 0)
+        {
+            groupNodes.Remove(group);
+        }
+    }
+
+}
+```
+
+但是此时更新<font color=#4db8ff>Name</font>，会将<font color=#4db8ff>Node</font>从<font color=#bc8df9>Graph view</font>的字典中删除，但是实际上他在<font color=#66ff66>Group</font>的字典中，因此无、哦们需要增加判断条件，是否在<font color=#66ff66>Group</font>
+
+因此我们可以给<font color=#4db8ff>Node</font>添加一个<font color=#66ff66>Group</font>属性
+
+```c#
+public class DSNode : Node
+{
+    public string DialogueName { get; set; }
+    public List<string> Choices { get; set; }
+    public string Text { get; set; }
+    public DSDialogueType DialogueType { get; set; }
+    public Group Group { get; set; }
+    private DSGraphView graphView;
+    private Color defaultBackgroundColor;
+    ...
+}
+```
+
+当添加到<font color=#66ff66>Group</font>和移除时都需要修改这个变量，因此我们需要修改代码
+
+```c#
+//AddGroupedNode
+string nodeName = node.DialogueName;
+node.Group = group;
+//RemoveGroupedNode
+string nodeName = node.DialogueName;
+node.Group = null;
+```
+
+更新<font color=#4db8ff>Node</font>中的回调函数
+
+```c#
+TextField dialogueNameTextField = DSElementUtility.CreateTextField(DialogueName,
+callback =>
+{
+    if (Group==null)
+    {
+        graphView.RemoveUngroundedNode(this);
+        DialogueName = callback.newValue;
+        graphView.AddUngroupedNode(this);
+        return;
+    }
+
+    Group currenGroup = Group;
+
+    graphView.RemoveGroupedNode(this,Group);
+    DialogueName = callback.newValue;
+    graphView.AddGroupedNode(this,currenGroup);
+
+});
+```
+
+![image-20231012143802508](assets/image-20231012143802508.png)
+
+同样的删除<font color=#4db8ff>Node</font>的时候，我们也需要修改其回调函数
+
+```c#
+//Graph view OnElementsDeleted
+foreach (var node in nodesToDelete)
+{
+    if (node.Group != null)
+    {
+        node.Group.RemoveElement(node);
+    }
+    RemoveUngroundedNode(node);
+    RemoveElement(node);
+}
+```
+
+<font color=#4db8ff>Link：</font>https://docs.unity3d.com/ScriptReference/30_search.html?q=Experimental.GraphView.Scope.RemoveElement
+
+#### 3.4 Same Group
+
+为了能够设置<font color=#66ff66>Group</font>相关数据，因此我们需要创建自己的<font color=#66ff66>Group</font>，与<font color=#4db8ff>Node</font>一样创建一个基类
+
+```c#
+using System.Collections;
+using System.Collections.Generic;
+using UnityEditor.Experimental.GraphView;
+using UnityEngine;
+
+namespace DS.Elements
+{
+    using Enumerations;
+    using Utilities;
+    using Winndos;
+    public class DSGroup : Group
+    {
+        private Color defaultBackgroundColor;
+        private float defaultBorderWidth;
+        public DSGroup(string groupTitle, Vector2 position)
+        {
+            defaultBackgroundColor = contentContainer.style.borderBottomColor.value;
+            defaultBorderWidth = contentContainer.style.borderBottomWidth.value;
+
+            title = groupTitle;
+            SetPosition(new Rect(position,Vector2.zero));
+        }
+        
+        #region Style
+        public void SetErrorStyle(Color color)
+        {
+            contentContainer.style.backgroundColor = color;
+            contentContainer.style.borderBottomWidth = 2.0f;
+        }
+        public void ResetStyle()
+        {
+            contentContainer.style.backgroundColor = defaultBackgroundColor;
+            contentContainer.style.borderBottomWidth = defaultBorderWidth;
+        }
+        #endregion
+    }
+}
+```
+
+其中我们将在一脚本中更新它，首选是<font color=#bc8df9>DSGraphView</font>
+
+```c#
+//DSGraphView
+public DSGroup CreateGroup(String title, Vector2 position)
+{
+    DSGroup group = new DSGroup(title, position);
+    return group;
+}
+...
+    public void AddGroupedNode(DSNode node, DSGroup group)
+{}
+
+private void OnGroupElementAdded()
+{
+    ...
+    DSGroup nodeGroup = (DSGroup)group;
+    DSNode node = (DSNode) element;
+    RemoveUngroundedNode(node);
+    AddGroupedNode(node,nodeGroup);
+    ...
+}
+```
+
+随后是<font color=#4db8ff>DSNode</font>中的回调函数中
+
+```c#
+ public DSGroup Group { get; set; }
+...
+TextField dialogueNameTextField = DSElementUtility.CreateTextField(DialogueName,
+                callback =>
+{
+    ...
+        DSGroup currenGroup = Group;
+
+    graphView.RemoveGroupedNode(this,Group);
+    DialogueName = callback.newValue;
+    graphView.AddGroupedNode(this,currenGroup);
+                    
+});
+```
+
+随后是<font color=#66ff66>DSGroupErrorData</font>
+
+```c#
+public class DSGroupErrorData
+{
+    public DSErrorData ErrorData { get; set; }
+    public List<DSGroup> Groups { get; set; }
+
+    public DSGroupErrorData()
+    {
+        ErrorData = new DSErrorData();
+        Groups = new List<DSGroup>();
+    }
+}
+```
+
+最后是<font color=#66ff66>DSSearchWindow</font>
+
+```c#
+case Group _:
+{
+    DSGroup group = graphView.CreateGroup("DialogueGroup", localMousePosition);
+    graphView.AddElement(group);
+    return true;
+}
+```
+
+#### 3.5 Group  Dictionary
+
+随后是初始化等操作
+
+```c#
+public class DSGraphView : GraphView
+{
+    private DSEditorWindow editorWindow;
+    private DSSearchWindow searchWindow;
+
+    private SerializableDictionary<String, DSNodeErrorData> ungroupedNodes;
+    private SerializableDictionary<String, DSNodeErrorData> groups;
+    private SerializableDictionary<Group, SerializableDictionary<String, DSNodeErrorData>> groupNodes;
+    public DSGraphView(DSEditorWindow dsEditorWindow)
+    {
+        editorWindow = dsEditorWindow;
+        ungroupedNodes = new SerializableDictionary<string, DSNodeErrorData>();
+        groups = new SerializableDictionary<string, DSNodeErrorData>();
+        groupNodes = new SerializableDictionary<Group, SerializableDictionary<string, DSNodeErrorData>>();
+        
+        ...
+    }
+```
+
+我们的操作只有<font color=#bc8df9>AddGroup</font>和<font color=#bc8df9>RemoveGroup</font>，操作与非<font color=#66ff66>Group <font color=#4db8ff>Node</font> 操作类似</font>，但是这里针对的是<font color=#66ff66>Group</font>，因此，可以使用<font color=#4db8ff>Node </font>想通思路
+
+1、同名<font color=#66ff66>Group</font>，<font color=#FD00FF>Error Color</font>，判断数量
+
+2、没有同名，直接加入
+
+```c#
+private void AddGroup(DSGroup group)
+{
+    string groupName = group.title;
+    if (!groups.ContainsKey(groupName))
+    {
+        DSGroupErrorData groupErrorData = new DSGroupErrorData();
+
+        groupErrorData.Groups.Add(group);
+        groups.Add(groupName,groupErrorData);
+        return;
+    }
+
+    //error color
+    List<DSGroup> groupsList = groups[groupName].Groups;
+
+    groupsList.Add(group);
+    Color errorColor = groups[groupName].ErrorData.Color;
+    group.SetErrorStyle(errorColor);
+
+    if (groupsList.Count ==2)
+    {
+        groupsList[0].SetErrorStyle(errorColor);
+    }
+}
+```
+
+![image-20231012160901526](assets/image-20231012160901526.png)
+
+但是我们现在还没发删除<font color=#66ff66>Group</font>，因此我们需要再回调函数<font color=#4db8ff>deleteSelection</font>中识别它
+
+```c#
+private void OnElementsDeleted()
+{
+    Type groupType = typeof(DSGroup);
+    deleteSelection = (operationName, askUser) =>
+    {
+        List<DSGroup> groupsToDelete = new List<DSGroup>();
+        List<DSNode> nodesToDelete = new List<DSNode>();
+        foreach (GraphElement element in selection)
+        {
+            ...
+            if (element.GetType() != groupType)
+            {
+                continue;
+            }
+
+            DSGroup group = (DSGroup)element;
+
+            RemoveGroup(group);
+            groupsToDelete.Add(group);
+        }
+
+        foreach (var group in groupsToDelete)
+        {
+            RemoveElement(group);
+        }
+
+        foreach (var node in nodesToDelete)
+        {
+           ...
+        }
+	};
+}
+```
+
+其中<font color=#66ff66>RemoveGroup</font>我们会如下操作
+
+1、将当前的<font color=#4db8ff>Group</font>从<font color=#FFCE70>List</font> 中移除，设置颜色样式
+
+2、判断同名<font color=#4db8ff>Group</font>的数量，1 将颜色设置回默认，0 将这个名字的<font color=#4db8ff>Group</font>从字典中删除
+
+```c#
+public void RemoveGroup(DSGroup group)
+{
+    string groupName = group.title;
+    List<DSGroup> groupsList = groups[groupName].Groups;
+
+    groupsList.Remove(group);
+    group.ResetStyle();
+
+    if (groupsList.Count == 1)
+    {
+        groupsList[0].ResetStyle();
+    }
+
+    if (groupsList.Count == 0)
+    {
+        groups.Remove(groupName);
+    }
+}
+```
+
+但是此时如果给<font color=#4db8ff>Group</font>改名<font color=#FFCE70>ErrorColor</font>不会消失，因此，我们需要添加回调函数，Unity 为我们提供了回调函数
+
+<font color=#bc8df9>OnGroupRenamed：</font>https://docs.unity3d.com/ScriptReference/Experimental.GraphView.Group.OnGroupRenamed.html
+
+回调函数：<font color=#bc8df9>groupTitleChanged：</font>https://docs.unity3d.com/ScriptReference/30_search.html?q=Experimental.GraphView.GraphView.groupTitleChanged
+
+但是回调函数，我们无法获得旧的<font color=#4db8ff>Name</font>，因此我们需要保存它
+
+```C#
+public class DSGroup : Group
+{
+    private Color defaultBackgroundColor;
+    private float defaultBorderWidth;
+    public string oldTitle;
+    public DSGroup(string groupTitle, Vector2 position)
+    {
+        defaultBackgroundColor = contentContainer.style.borderBottomColor.value;
+        defaultBorderWidth = contentContainer.style.borderBottomWidth.value;
+
+        title = groupTitle;
+        oldTitle = groupTitle;
+        SetPosition(new Rect(position,Vector2.zero));
+    }
+    ...
+}
+```
+
+创建一个回调方法<font color=#66ff66>OnGroupRenamed</font>
+
+```c#
+private void OnGroupRenamed()
+{
+    groupTitleChanged = (group, newTitle) =>
+    {
+        DSGroup dsGroup = (DSGroup) group;
+
+        RemoveGroup(dsGroup);
+        dsGroup.oldTitle = newTitle;
+        AddGroup(dsGroup);
+    };
+}
+```
+
+![image-20231012170736885](assets/image-20231012170736885.png)
