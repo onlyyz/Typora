@@ -964,3 +964,162 @@ private void OnGroupRenamed()
 ```
 
 ![image-20231012170736885](assets/image-20231012170736885.png)
+
+<font color=#4db8ff>Code Link：</font>https://github.com/onlyyz/Custom/commit/7add3624e62ea94d1800272658d2f57f6b055f97
+
+#### 3.6 select node to group
+
+可以迭代<font color=#bc8df9>Graph view</font>的选择列表
+
+```c#
+public DSGroup CreateGroup(String title, Vector2 position)
+{
+    DSGroup group = new DSGroup(title, position);
+
+    foreach (GraphElement element in selection)
+    {
+        if (!(element is DSNode))
+        {
+            continue;
+        }
+
+        DSNode node = (DSNode)element;
+        group.AddElement(node);
+    }
+
+    AddGroup(group);
+    return group;
+}
+```
+
+但是此时<font color=#4db8ff>node</font>并没有加入 <font color=#66ff66>Group</font>的<font color=#FFCE70>NodeList</font>中，所以会有同名提示，因此我们需要处理
+
+![image-20231012173349878](assets/image-20231012173349878.png)
+
+在回调函数<font color=#66ff66>OnGroupElementAdded</font>中尝试Debug
+
+```c#
+private void OnGroupElementAdded()
+{
+    elementsAddedToGroup = (group, elements) =>
+    {
+        foreach (GraphElement element in elements)
+        {
+            ...
+            DSNode node = (DSNode) element;
+
+            Debug.Log("Call Back Function called");
+            ...
+        }
+    }; 
+}
+```
+
+在Unity中调试可以发现，回调函数没有被调用，因此需要进行修复
+
+<img src="assets/image-20231012173708697.png" alt="image-20231012173708697" style="zoom:50%;" />
+
+因此，当我们将选定的节点添加到<font color=#66ff66>Group</font>中时，<font color=#66ff66>Group</font>还没添加到<font color=#bc8df9>Graph view </font>，只有创建<font color=#66ff66>Group</font>的函数返回时，才会添加到<font color=#bc8df9>Graph view </font>
+
+因此我们<font color=#bc8df9>Graph View</font>中监听<font color=#66ff66>Group</font>，我们只要先添加<font color=#66ff66>Group</font>，随后<font color=#4db8ff>Node</font>
+
+```c#
+public DSGroup CreateGroup(String title, Vector2 position)
+{
+    DSGroup group = new DSGroup(title, position);
+
+    AddGroup(group);
+    AddElement(group);
+    ...
+}
+```
+
+修改相关的区域，我们是自己内部直接将<font color=#66ff66>Group</font>添加到<font color=#bc8df9>Graph view</font>，因此可以删除那些当函数返回堆栈时的添加方法
+
+```c#
+private IManipulator CreateGroupContextualMenu()
+{
+    ContextualMenuManipulator contextlMenuManipulartor = new ContextualMenuManipulator(
+        menuEvet => menuEvet.menu.AppendAction("Add Group", 
+                                               actionEvent => CreateGroup("DialogueGroup",GetLocalMousePosition(actionEvent.eventInfo.localMousePosition))));
+    return contextlMenuManipulartor;
+}
+```
+
+搜索树可以直接清除前面的变量，只调用函数方法
+
+```c#
+case Group _:
+{
+    graphView.CreateGroup("DialogueGroup", localMousePosition);
+    return true;
+}
+```
+
+![image-20231012175519982](assets/image-20231012175519982.png)
+
+可以看到回调函数<font color=#FD00FF>Debug</font>
+
+#### 3.7 delete Group
+
+现在我们需要再删除<font color=#66ff66>Group</font>时，将里面内部的设置为<font color=#66ff66>graph view </font>的<font color=#4db8ff>Node</font>，原因是我们重写了<font color=#FFCE70>deleteSelection</font>
+
+因此它不再通过<font color=#FD00FF>RemoveElement</font>自动删除<font color=#4db8ff>Node</font>，也不会为我们<font color=#4db8ff>OnGroupElementRemoved</font>
+
+ 我们可以迭代<font color=#66ff66>Group</font>的<font color=#4db8ff>Node</font>，随后利用<font color=#FD00FF>RemoveElement</font>，这将为每个<font color=#4db8ff>Node</font>调用<font color=#bc8df9>Graph View</font>的回调函数<font color=#bc8df9>elementsRemovedFormGroup</font>回调函数
+
+在<font color=#66ff66>OnElementsDeleted</font>上操作
+
+```c#
+private void OnElementsDeleted()
+{
+    Type groupType = typeof(DSGroup);
+    deleteSelection = (operationName, askUser) =>
+    {
+        List<DSGroup> groupsToDelete = new List<DSGroup>();
+        List<DSNode> nodesToDelete = new List<DSNode>();
+        foreach (GraphElement element in selection)
+        {
+            //mode 
+            if (element is DSNode node)
+            {
+                nodesToDelete.Add(node);
+                continue;
+            }
+
+            if (element.GetType() != groupType)
+            {
+                continue;
+            }
+
+            DSGroup group = (DSGroup)element;
+            groupsToDelete.Add(group);
+        }
+
+        foreach (var group in groupsToDelete)
+        {
+            //delete the node in the group
+            List<DSNode> groupNodes = new List<DSNode>();
+
+            foreach (GraphElement groupElement in group.containedElements)
+            {
+                if (!(groupElement is DSNode))
+                {
+                    continue;
+                }
+
+                //get delete node 
+                groupNodes.Add((DSNode)groupElement);
+            }
+            //remove the node at the group
+            group.RemoveElements(groupNodes);
+
+            RemoveGroup(group);
+            RemoveElement(group);
+        }
+        ...
+    };
+}
+```
+
+![image-20231012183328973](assets/image-20231012183328973.png)
