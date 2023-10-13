@@ -1123,3 +1123,153 @@ private void OnElementsDeleted()
 ```
 
 ![image-20231012183328973](assets/image-20231012183328973.png)
+
+<font color=#4db8ff>Code Link：</font>https://github.com/onlyyz/Custom/commit/a0c16f52f005e1dccffe24b114125955e6e3efb3
+
+#### 3.8 Remove Port
+
+<font color=#FFCE70>video 23</font>
+
+![image-20231013105111767](assets/image-20231013105111767.png)
+
+现在就算是删除<font color=#4db8ff>Node</font>，<font color=#66ff66>Edge </font>也不会被删除，因此我们需要处理这一部分的内容
+
+我们可以在<font color=#bc8df9>deleteSelection</font>的回调函数中识别<font color=#66ff66>Edge </font>，随后利用<font color=#4db8ff>DeleteElements</font>删除，为什么是<font color="red">Delete</font>而是<font color=#4db8ff>Remove</font>，这是因为<font color=#bc8df9>Graph View</font>没有<font color=#4db8ff>RemoveElement</font>方法
+
+因此我们需要先获得要删除的<font color=#66ff66>Edge </font>列表，随后利用<font color=#4db8ff>DeleteElements</font>
+
+```c#
+private void OnElementsDeleted()
+{
+    Type groupType = typeof(DSGroup);
+    Type edgeType = typeof(Edge);
+
+    deleteSelection = (operationName, askUser) =>
+    {
+        List<DSGroup> groupsToDelete = new List<DSGroup>();
+        List<DSNode> nodesToDelete = new List<DSNode>();
+        List<Edge> edgesToDelete = new ListStack<Edge>();
+        foreach (GraphElement element in selection)
+        {
+            //mode 
+            if (element is DSNode node)
+            {
+                nodesToDelete.Add(node);
+                continue;
+            }
+
+            if (element.GetType() == edgeType)
+            {
+                edgesToDelete.Add((Edge) element);
+                continue;
+            }
+            ...
+        }
+
+        //Remove the Elements
+
+        DeleteElements(edgesToDelete);
+        ...
+    }
+```
+
+现在可以通过<font color="red">select</font>删除<font color=#66ff66>Edge </font>，但是删除<font color=#4db8ff>Node</font>，<font color=#66ff66>Edge </font>不会跟着消失，因此我们需要添加一个<font color=#bc8df9>DisconnectPorts</font>方法给<font color=#4db8ff>Node</font>
+
+```c#
+//DSNode
+public void DisconnectAllPortS()
+{
+    DisconnectPorts(inputContainer);
+    DisconnectPorts(outputContainer);
+}
+
+
+private void DisconnectPorts(VisualElement container)
+{
+    foreach (Port port in container.Children())
+    {
+        if (!port.connected)
+        {
+            continue;
+        }
+
+        graphView.DeleteElements(port.connections);
+    }
+}      
+```
+
+现在我们需要在删除所有的<font color=#4db8ff>Node</font>之前断开的连接
+
+```c#
+private void OnElementsDeleted()
+{
+    ...
+    foreach (var node in nodesToDelete)
+    {
+        if (node.Group != null)
+        {
+            node.Group.RemoveElement(node);
+        }
+        RemoveUngroundedNode(node);
+
+        node.DisconnectAllPortS();
+        RemoveElement(node);
+    }
+    ...
+}
+
+```
+
+现在我们就可以删除<font color=#4db8ff>Node</font>时，断开连接
+
+#### 3.9 Node Menu
+
+我们想为<font color=#4db8ff>Node</font>添加两个功能，删除<font color=#66ff66>Input Port</font>或者<font color=#66ff66>Output Port</font>的所有连接，我们可以为<font color=#4db8ff>Node</font>注册一个方法，利用<font color=#bc8df9>BuildContextualMenu</font>
+
+```c#
+public override void BuildContextualMenu(ContextualMenuPopulateEvent evt)
+{
+    evt.menu.AppendAction("Disconnect Input Ports", actionEvent =>
+                          DisconnectInputPorts());
+    evt.menu.AppendAction("Disconnect Output Ports", actionEvent =>
+                          DisconnectOutputPorts());
+
+    base.BuildContextualMenu(evt);
+}
+```
+
+其中我们改写函数
+
+```c#
+public void DisconnectAllPortS()
+{
+    DisconnectInputPorts();
+    DisconnectOutputPorts();
+}
+
+private void DisconnectInputPorts()
+{
+    DisconnectPorts(inputContainer);
+}
+private void DisconnectOutputPorts()
+{
+    DisconnectPorts(outputContainer);
+}
+```
+
+![image-20231013174951546](assets/image-20231013174951546.png)
+
+菜单栏上多了三个选项
+
+#### 3.10 ToolBar
+
+<font color=#FFCE70>video 24</font> 
+
+可以利用工具栏去作为载体放置一些预制操作与功能，可以先创建一个简单的工具栏包含文件名以及保存按钮。当<font color=#bc8df9>Graph view </font>中出现同名错误时
+
+将无法保存
+
+
+
+
+
