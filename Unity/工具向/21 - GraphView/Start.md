@@ -1269,7 +1269,379 @@ private void DisconnectOutputPorts()
 
 将无法保存
 
+因为工具栏是<font color=#4db8ff>Window</font>中的元素，它与<font color=#bc8df9>Grpah view</font>一样被添加到其中，因此，我们可以和<font color=#66ff66>AddGraphVIew</font>一样，创建一个<font color=#66ff66>AddToolbar</font>方法来管理工具栏
 
+```c#
+private readonly string defaultFileName = "Dialogue File";
 
+...
 
+private void AddToolbar()
+{
+    Toolbar toolbar = new Toolbar();
+
+    //the TextField include the Call Back Function
+    TextField fileNameTextField = DSElementUtility.CreateTextField(defaultFileName,"File Name:");
+    // fileNameTextField.style.flexDirection = FlexDirection.Column;
+    Button saveButton = DSElementUtility.CreateButton("Save");
+
+    toolbar.Add(fileNameTextField);
+    toolbar.Add(saveButton);
+
+    rootVisualElement.Add(toolbar);
+}
+```
+
+![image-20231016102544103](assets/image-20231016102544103.png)
+
+增加一个变量去check 是否有同名的<font color=#66ff66>Name</font>的<font color=#4db8ff>Node 和 Group</font>，通过计数判断，如果没有错误，则可以保存，因此需要再<font color=#bc8df9>Graph View</font>中添加一个变量检查
+
+```c#
+private int repeatedNamesAmount;
+
+public int RepeatedNamesAmount
+{
+    get
+    {
+        return repeatedNamesAmount;
+    }
+    set
+    {
+        repeatedNamesAmount = value;
+
+        if (repeatedNamesAmount == 0)
+        {
+            //Enable Save Button
+        }
+
+        if (repeatedNamesAmount == 1)
+        {
+            //Disable Save Button
+        }
+    }
+}
+```
+
+为了可以操控<font color=#bc8df9>Button</font>，我们可以将其改为全局变量，随后利用函数操作
+
+```c#
+private readonly string defaultFileName = "Dialogue File";
+private Button saveButton;
+
+...
+#region Utility Methods
+
+    public void EnableSaving()
+{
+    saveButton.SetEnabled(true);
+}
+
+public void DisableSaving()
+{
+    saveButton.SetEnabled(false);
+}
+#endregion
+```
+
+随后方法在<font color=#bc8df9>Graph View</font> 中调用
+
+```c#
+public int RepeatedNamesAmount
+{
+    get
+    {
+        return repeatedNamesAmount;
+    }
+    set
+    {
+        repeatedNamesAmount = value;
+
+        if (repeatedNamesAmount == 0)
+        {
+            //Enable Save Button
+            editorWindow.EnableSaving();
+        }
+
+        if (repeatedNamesAmount == 1)
+        {
+            //Disable Save Button
+            editorWindow.DisableSaving();
+        }
+    }
+}
+```
+
+现在需要跟踪计数，当出现相同<font color=#4db8ff>Name</font>的<font color=#4db8ff>Node 和 Group</font>时，我们就将计数加1，移除时减1
+
+因此我们可以在相同名判断处去添加
+
+```c#
+//AddUngroupedNode
+if (ungroupedNodesList.Count == 2)
+{
+    ++RepeatedNamesAmount;
+    ungroupedNodesList[0].SetErrorStyle(errorColor);
+}
+//RemoveUngroundedNode
+if (ungroupedNodesList.Count == 1)
+{
+    --RepeatedNamesAmount;
+    ungroupedNodesList[0].ResetStyle();
+    return;
+}
+//AddGroup
+if (groupsList.Count ==2)
+{
+    ++RepeatedNamesAmount;
+    groupsList[0].SetErrorStyle(errorColor);
+}
+//AddGroupedNode
+if (groupedNodeList.Count == 2)
+{
+    ++RepeatedNamesAmount;
+    groupedNodeList[0].SetErrorStyle(errorColor);
+}
+//RemoveGroupedNode
+if (groupedNodesList.Count ==1)
+{
+    --RepeatedNamesAmount;
+    groupedNodesList[0].ResetStyle();   
+    return;
+}
+//RemoveGroup
+if (groupsList.Count == 1)
+{
+    --RepeatedNamesAmount;
+    groupsList[0].ResetStyle();
+    return;
+}
+```
+
+![image-20231016105211484](assets/image-20231016105211484.png)
+
+可以检测到，当出现同名错误的时候，<font color=#bc8df9>Button Save</font>，会失效，因此无法保存，但是修改名字之后，<font color=#bc8df9>Button Save</font>就可以恢复使用
+
+![image-20231016105256265](assets/image-20231016105256265.png)
+
+可以给<font color=#66ff66>Toolbar</font>添加样式
+
+```c#
+private void AddToolbar()
+{
+    Toolbar toolbar = new Toolbar();
+
+    //the TextField include the Call Back Function
+    TextField fileNameTextField = DSElementUtility.CreateTextField(defaultFileName,"File Name:");
+    // fileNameTextField.style.flexDirection = FlexDirection.Column;
+    saveButton = DSElementUtility.CreateButton("Save");
+    toolbar.Add(fileNameTextField);
+    toolbar.Add(saveButton);
+    toolbar.AddStyleSheets("DialogueSystem/DSToolbarStyles.uss");
+    rootVisualElement.Add(toolbar);
+}
+```
+
+![image-20231016112451679](assets/image-20231016112451679.png)
+
+### 四、 
+
+#### 4.1 Element Name
+
+因为保存文件时，名字中不能存在空格，因此需要利用回调函数进行检查，利用脚本<font color=#FFCE70>Stackoverflow</font>
+
+<font color=#4db8ff>Link：</font>https://pastebin.com/qSVNV0k7
+
+作用是清除字符串中的空格以及其他特殊符号，随后返回更新的字符串，因此我们需要获取回调函数的值，我们可以利用<font color="red">Event.Target</font>
+
+<font color=#4db8ff>Link：</font>https://docs.unity3d.com/ScriptReference/30_search.html?q=UIElements.EventBase.target
+
+```c#
+//DSNode
+public virtual void Draw()
+{
+
+     TextField dialogueNameTextField = DSElementUtility.CreateTextField(DialogueName,null,
+      callback =>
+      {
+          TextField target = (TextField) callback.target;
+          target.value = callback.newValue.RemoveWhitespaces();
+
+          if (Group==null)
+          {
+              graphView.RemoveUngroundedNode(this);
+              DialogueName = target.value;
+              graphView.AddUngroupedNode(this);
+              return;
+          }
+
+          DSGroup currenGroup = Group;
+
+          graphView.RemoveGroupedNode(this,Group);
+          DialogueName = target.value;
+          graphView.AddGroupedNode(this,currenGroup);
+       });
+}
+```
+
+对<font color=#4db8ff>Group</font>也同样如此操作
+
+```c#
+//DSGraph View
+private void OnGroupRenamed()
+{
+    groupTitleChanged = (group, newTitle) =>
+    {
+        DSGroup dsGroup = (DSGroup) group;
+        dsGroup.title = newTitle.RemoveWhitespaces();
+
+        RemoveGroup(dsGroup);
+        dsGroup.oldTitle =  dsGroup.title;
+        AddGroup(dsGroup);
+    };
+}
+```
+
+对于<font color=#4db8ff>Toolbar</font>我们需要为它添加回调函数
+
+```c#
+fileNameTextField = DSElementUtility.CreateTextField(defaultFileName,"File Name:",
+                                                     callback =>
+{
+    fileNameTextField.value = callback.newValue.RemoveWhitespaces();
+});
+```
+
+同时为了区分大小写，为我们为创建的<font color=#4db8ff>Node，Group</font>的命名字符串末尾，添加一个<font color=#66ff66>ToLower()</font>
+
+```c#
+public void AddUngroupedNode(DSNode node)
+{
+    string nodeName = node.DialogueName.ToLower();
+}
+public void RemoveUngroundedNode(DSNode node)
+{
+    string nodeName = node.DialogueName.ToLower();
+}
+...
+string nodeName = node.DialogueName.ToLower();
+string nodeName = node.DialogueName.ToLower();
+```
+
+ 同时我们需要检测特殊字符串，因此与使用<font color=#66ff66>RemoveWhitespaces()</font>，差不多
+
+```c#
+//Node Draw()
+target.value = callback.newValue.RemoveWhitespaces().RemoveSpecialCharacters();
+//Graph view OnGroupRenamed()
+dsGroup.title = newTitle.RemoveWhitespaces().RemoveSpecialCharacters();
+//EditorWindow AddToolbar()
+fileNameTextField.value = callback.newValue.RemoveWhitespaces().RemoveSpecialCharacters();
+```
+
+#### 4.2 Save
+
+一个<font color=#4db8ff>Node</font>，需要保存的数据有<font color=#FFCE70>Name、Text、Choices、Group、Type、Postion</font>
+
+创建相应脚本<font color=#66ff66>DSChoiceSaveData</font>
+
+```c#
+using System;
+using UnityEngine;
+
+namespace DS.Data.Save
+{
+    [Serializable]
+    public class DSChoiceSaveData
+    {
+        [field: SerializeField] public string NodeID { get; set; }
+        [field: SerializeField] public string Text { get; set; }
+    }
+}
+```
+
+<font color=#66ff66>DSNodeSaveData</font>
+
+```c#
+using System;
+using System.Collections.Generic;
+using UnityEngine;
+
+namespace DS.Data.Save
+{
+    using Enumerations;
+    [Serializable]
+    public class DSNodeSaveData
+    {
+        [field: SerializeField] public string ID { get; set; }
+        [field: SerializeField] public string Name { get; set; }
+        [field: SerializeField] public string Text { get; set; }
+        [field: SerializeField] public List<DSChoiceSaveData> Choices { get; set; }
+        [field: SerializeField] public string GroupID { get; set; }
+        [field: SerializeField] public DSDialogueType DialogueType { get; set; }
+        [field: SerializeField] public Vector2 Postion { get; set; }
+    }
+}
+```
+
+在初始化的时候赋予ID，组也一样
+
+```c#
+//Node
+public virtual void Initialize(DSGraphView DSGraphView, Vector2 position)
+{
+    ID = Guid.NewGuid().ToString();
+}
+
+public DSGroup(string groupTitle, Vector2 position)
+{
+    ID = Guid.NewGuid().ToString();
+}
+```
+
+同时创建保存Group的脚本
+
+```C#
+using System;
+using UnityEngine;
+
+namespace DS.Data.Save
+{
+    [Serializable]
+    public class DSGroupSaveData
+    {
+        [field: SerializeField] public string ID { get; set; }
+        [field: SerializeField] public string Name { get; set; }
+        [field: SerializeField] public Vector2 Postion { get; set; }
+        
+    }
+}
+```
+
+管理保存的脚本<font color=#bc8df9>DSGraphSaveDataSO</font>，对于<font color=#bc8df9>Graph </font>，只需要保存文件名，组列表，节点列表，通过数据知道他们是否有分类
+
+```c#
+using System.Collections;
+using System.Collections.Generic;
+using UnityEngine;
+
+namespace DS.Data.Save
+{
+    public class DSGraphSaveDataSO : ScriptableObject
+    {
+        [field: SerializeField] public string FileName { get; set; }
+        [field: SerializeField] public List<DSGroupSaveData> Groups  { get; set; }
+        [field: SerializeField] public List<DSNodeSaveData> Nodes  { get; set; }
+        [field: SerializeField] public List<string> OldGroupNames  { get; set; }
+        [field: SerializeField] public List<string> OldUngroupedNodeNames  { get; set; }
+        [field: SerializeField] public SerializableDictionary<string, List<string>> OldGroupedNodeNames { get; set; }
+
+        public void Initalize(string fileName)
+        {
+            FileName = fileName;
+            Groups = new List<DSGroupSaveData>();
+            Nodes = new List<DSNodeSaveData>();
+        }
+    }
+}
+```
 
