@@ -1538,7 +1538,7 @@ dsGroup.title = newTitle.RemoveWhitespaces().RemoveSpecialCharacters();
 fileNameTextField.value = callback.newValue.RemoveWhitespaces().RemoveSpecialCharacters();
 ```
 
-#### 4.2 Save
+#### 4.2 Perparing Save 
 
 一个<font color=#4db8ff>Node</font>，需要保存的数据有<font color=#FFCE70>Name、Text、Choices、Group、Type、Postion</font>
 
@@ -1645,3 +1645,371 @@ namespace DS.Data.Save
 }
 ```
 
+现在数据存储的架构为下图，其中部分数据可以直接替换字典中的容器架构
+
+![DialogueData](assets/DialogueData.jpg)
+
+#### 4.3 remove Choice
+
+我们已经创建了序列化的数据格式，因此可以替换相关的容器中的数据格式，如：字典
+
+现在为了增加<font color=#4db8ff>Node</font>中的增加与删除，下一分支选择的功能
+
+我们可以先替换其中的数据<font color=#66ff66>List </font>容器格式，其中其他使用<font color=#4db8ff>Choices</font>的都得修改，如初始化列表
+
+这将允许我们保存链接的<font color=#4db8ff>Node</font>和<font color=#4db8ff>Node</font>选择列表中的选择文本
+
+```c#
+using Data.Save;
+
+public class DSNode : Node
+{
+    public string ID { get; set; }
+    public string DialogueName { get; set; }
+    public List<DSChoiceSaveData> Choices { get; set; }
+    public string Text { get; set; }
+    public DSDialogueType DialogueType { get; set; }
+    public DSGroup Group { get; set; }
+    ...
+}
+```
+
+同样的单选与多选的<font color=#4db8ff>Node</font>也得更新，同时在前面导入命名空间
+
+```c#
+using UnityEditor.Experimental.GraphView;
+using UnityEngine;
+
+namespace DS.Elements
+{
+    using Enumerations;
+    using Utilities;
+    using Winndos;
+    using Data.Save;
+    public class DSSingleChoiceNode : DSNode
+    {
+        public override void Initialize(DSGraphView DSGraphView, Vector2 position)
+        {
+            base.Initialize(DSGraphView,position);
+            DialogueType = DSDialogueType.SingleChoice;
+            DSChoiceSaveData choiceData = new DSChoiceSaveData()
+            {
+                Text = "Next Dialogue"
+            };
+            Choices.Add(choiceData);
+        }
+
+        /* OUTPUT PORT */
+        public override void Draw()
+        {
+            base.Draw();
+            foreach (DSChoiceSaveData choice in Choices)
+            {
+                Port choicePort = this.CreatePort(choice.Text);
+                outputContainer.Add(choicePort);
+            }
+            RefreshExpandedState();
+        }
+    }
+}
+
+```
+
+多选的部分同样也是更新容器，随后修改遍历部分的数据类型
+
+```c#
+using UnityEditor.Experimental.GraphView;
+using UnityEngine;
+using UnityEngine.UIElements;
+
+namespace DS.Elements
+{
+    using Enumerations;
+    using Utilities;
+    using Winndos;
+    using Data.Save;
+    public class DSMultipleChoiceNode : DSNode
+    {
+        public override void Initialize(DSGraphView DSGraphView, Vector2 position)
+        {
+            base.Initialize(DSGraphView,position);
+            DialogueType = DSDialogueType.MultipleChoice;
+            DSChoiceSaveData choiceData = new DSChoiceSaveData()
+            {
+                Text = "New Choice"
+            };
+            Choices.Add(choiceData);
+        }
+
+       
+        public override void Draw() 
+        {
+            base.Draw();
+
+            /* MAIN CONTAINER */
+            Button addChoiceButton = DSElementUtility.CreateButton("Add Choice", () =>
+            {
+                DSChoiceSaveData choiceData = new DSChoiceSaveData()
+                {
+                    Text = "New Choice"
+                };
+                Choices.Add(choiceData);
+                
+                Port choicePort = CreateChoicePort(choiceData.Text);
+                outputContainer.Add(choicePort);
+            });
+            addChoiceButton.AddToClassList("ds-node_button");
+            mainContainer.Insert(1,addChoiceButton);
+            
+            /* OUTPUT PORT */
+            foreach (DSChoiceSaveData choice in Choices)
+            {
+                Port choicePort = CreateChoicePort(choice.Text);
+                outputContainer.Add(choicePort);
+            }
+            RefreshExpandedState();
+        }
+...
+    }
+```
+
+删除<font color=#66ff66>Port</font>的选择，可以在<font color=#66ff66>CreateChoicePort</font>中的创建<font color=#4db8ff>deleteChoiceButton</font>的回调函数中执行操作，可以通过输入一个空参数的回调，随后删除选择
+
+1、判断是否只有一个<font color=#4db8ff>Port</font>
+
+2、是否有<font color=#4db8ff>Edge</font>，但是移除<font color=#4db8ff>Edge</font>需要<font color=#bc8df9>Graph View</font>，需要从<font color=#4db8ff>Base Node</font>修改
+
+3、
+
+```c#
+ private Port CreateChoicePort(string choice)
+        {
+            Port choicePort = this.CreatePort();
+
+Button deleteChoiceButton = DSElementUtility.CreateButton("X", () =>
+ {
+     if (Choices.Count == 1)
+     {
+         return;
+     }
+
+     if (choicePort.connected)
+     {
+
+     }
+ }
+```
+
+移除<font color=#4db8ff>Edge</font>需要<font color=#bc8df9>Graph View</font>，需要从<font color=#4db8ff>Base Node</font>修改，将它改为<font color=#FD00FF>protected</font>，这样继承<font color="red">Base Node</font> 的<font color=#4db8ff>Node</font>都可以访问它
+
+```c#
+protected DSGraphView graphView;
+```
+
+这样就可以断开port的连接了
+
+```c#
+ private Port CreateChoicePort(string choice)
+{
+     Port choicePort = this.CreatePort();
+     Button deleteChoiceButton = DSElementUtility.CreateButton("X", () =>
+     {
+         if (Choices.Count == 1)
+         {
+             return;
+         }
+         //delete all edge
+         if (choicePort.connected)
+         {
+             graphView.DeleteElements(choicePort.connections);
+         }  
+    });
+ }
+```
+
+需要删除<font color=#4db8ff>choices</font>，但是我们并不知道删除的是那个，因此我们需要<font color="red">VisualElement.userData _</font> ，此属性可用于将应用程序特定的用户数据与此 VisualElement 相关联，随后利用<font color=#66ff66>ID</font>进行筛选
+
+<font color=#4db8ff>Link：</font>https://docs.unity3d.com/ScriptReference/30_search.html?q=UIElements.VisualElement.userData
+
+```c#
+private Port CreateChoicePort(object UserData)
+{
+    Port choicePort = this.CreatePort();
+    choicePort.userData = UserData;
+    DSChoiceSaveData choiceData = (DSChoiceSaveData)UserData;
+    ...
+}
+```
+
+修改部分代码，确保传入的是<font color=#bc8df9>ChoiceData</font>
+
+```c#
+//DSSingleChoiceNode
+public override void Draw()
+{
+    base.Draw();
+    foreach (DSChoiceSaveData choice in Choices)
+    {
+        Port choicePort = this.CreatePort(choice.Text);
+        choicePort.userData = choice;
+        outputContainer.Add(choicePort);
+    }
+    RefreshExpandedState();
+}
+```
+
+
+
+```c#
+ public override void Draw()
+{
+     base.Draw();
+
+    /* MAIN CONTAINER */
+	Button addChoiceButton = DSElementUtility.CreateButton("Add Choice", () =>
+	{
+        DSChoiceSaveData choiceData = new DSChoiceSaveData()
+        {
+            Text = "New Choice"
+        };
+        Choices.Add(choiceData);
+
+        Port choicePort = CreateChoicePort(choiceData);
+        outputContainer.Add(choicePort);
+    });
+     addChoiceButton.AddToClassList("ds-node_button");
+     mainContainer.Insert(1, addChoiceButton);
+
+     /* OUTPUT PORT */
+     foreach (DSChoiceSaveData choice in Choices)
+     {
+         Port choicePort = CreateChoicePort(choice);
+         outputContainer.Add(choicePort);
+     }
+
+     RefreshExpandedState();
+}
+```
+
+回调函数，将将数据从<font color=#66ff66>List</font>中移除，随后<font color=#bc8df9>graph View</font>中移除
+
+```c#
+ Button deleteChoiceButton = DSElementUtility.CreateButton("X", () =>
+{
+    if (Choices.Count == 1)
+    {
+        return;
+    }
+    //delete all edge
+    if (choicePort.connected)
+    {
+        graphView.DeleteElements(choicePort.connections);
+    }
+    //for Port Lit Remove the Port and use ID to Remove the Port form the Graph View
+    Choices.Remove(choiceData);
+    graphView.RemoveElement(choicePort);
+});
+```
+
+#### 4.4 ID use
+
+但是此时我们的<font color=#FFCE70>POrt</font>链接时，ID没有更新，因此，我们需要将ID的修改加入函数中利用一个新的回调函数
+
+<font color="red">**GraphView.GraphView.graphViewChanged**</font>
+
+<font color=#4db8ff>Link：</font>https://docs.unity3d.com/ScriptReference/30_search.html?q=Experimental.GraphView.GraphView.graphViewChanged
+
+当图表中发生某些更改时的回调。请参阅 GraphViewChange。
+
+<font color=#4db8ff>GraphViewChange Link：</font>https://docs.unity3d.com/ScriptReference/Experimental.GraphView.GraphViewChange.html
+
+Properties
+
+| [edgesToCreate](https://docs.unity3d.com/ScriptReference/Experimental.GraphView.GraphViewChange-edgesToCreate.html) | Edges about to be created.    |
+| ------------------------------------------------------------ | ----------------------------- |
+| [elementsToRemove](https://docs.unity3d.com/ScriptReference/Experimental.GraphView.GraphViewChange-elementsToRemove.html) | Elements about to be removed. |
+| [movedElements](https://docs.unity3d.com/ScriptReference/Experimental.GraphView.GraphViewChange-movedElements.html) | Elements already moved.       |
+| [moveDelta](https://docs.unity3d.com/ScriptReference/Experimental.GraphView.GraphViewChange-moveDelta.html) | The delta of the last move.   |
+
+```c#
+public struct GraphViewChange
+{
+    /// <summary>
+    ///   <para>Elements about to be removed.</para>
+    /// </summary>
+    public List<GraphElement> elementsToRemove;
+    /// <summary>
+    ///   <para>Edges about to be created.</para>
+    /// </summary>
+    public List<Edge> edgesToCreate;
+    /// <summary>
+    ///   <para>Elements already moved.</para>
+    /// </summary>
+    public List<GraphElement> movedElements;
+    /// <summary>
+    ///   <para>The delta of the last move.</para>
+    /// </summary>
+    public Vector2 moveDelta;
+}
+```
+
+我们利用两个变量，一个是<font color=#bc8df9>edgesToCreate</font>，一个是<font color=#bc8df9>elementsToRemove</font>。在遍历时获取ID，并且修改与删除
+
+```c#
+// the ID for Port
+private void OnGraphViewChanged()
+{
+    graphViewChanged = (changes) =>
+    {
+        if (changes.edgesToCreate != null){}
+        return changes;
+    };
+}
+```
+
+```c#
+if (changes.edgesToCreate != null)
+{
+    foreach (Edge edge in changes.edgesToCreate)
+    {
+        DSNode nextNode = (DSNode) edge.input.node;
+        DSChoiceSaveData choiceData = (DSChoiceSaveData)edge.output.userData;
+        choiceData.NodeID = nextNode.ID;
+    }
+}
+
+if (changes.elementsToRemove != null)
+{
+    Type edgeType = typeof(Edge);
+    foreach (GraphElement element in changes.elementsToRemove)
+    {
+        if (element.GetType() != edgeType)
+        {
+            continue;
+        }
+
+        Edge edge = (Edge)element;
+        DSChoiceSaveData choiceData = (DSChoiceSaveData)edge.output.userData;
+        choiceData.NodeID = "";
+    }
+```
+
+在回调函数<font color="red">deleteSelection</font>中
+
+<font color=#66ff66>RemoveElement</font>，不会将<font color="red">Edge</font>添加到<font color=#4db8ff>elementsToRemove</font>列表中
+
+<font color=#66ff66>DeleteElements</font>，会将<font color="red">Edge</font>添加到<font color=#4db8ff>elementsToRemove</font>列表中，这也意味着<font color=#4db8ff>NodeID</font>会被重置
+
+构造函数中调用回调函数<font color=#bc8df9>graphViewChanged</font>
+
+最后一件事就是更新<font color=#66ff66>TextField</font>时更新<font color=#66ff66>DataText</font>，可以添加回调函数
+
+```c#
+//Create the Text
+            TextField choiceTextField = DSElementUtility.CreateTextField(choiceData.Text,null,callback =>
+            {
+                choiceData.Text = callback.newValue;
+            });
+```
+
+<font color=#4db8ff>Code：</font>https://github.com/onlyyz/Custom/commit/a4042b5c10df948aa350d8fb49093ce11ed593ba
