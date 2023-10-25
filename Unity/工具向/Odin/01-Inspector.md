@@ -284,7 +284,7 @@ public string ShowWhenA;
 >
 > DisableWhenA检测条件未通过被激活
 >
-> EnableWhenA检测条件未通过被冻结
+> EnableWhen A检测条件未通过被冻结
 >
 > HideWhenA检测条件未通过显示出来
 >
@@ -801,7 +801,7 @@ public class MyV3
 }
 ```
 
-#### 6.7 w
+#### 6.7 Text
 
 ```C#
 [LabelText("我的成绩")]

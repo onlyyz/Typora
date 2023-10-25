@@ -147,7 +147,7 @@ public Group CreateGroup(String title, Vector2 position)
 }
 ```
 
-#### 2.5 Utility
+#### 2.5 Utility This
 
 将重复创建的内容进行优化架构，如：<font color=#bc8df9>Button、Foldout、Port、TextField</font>，这样我们可以不用一直<font color=#4db8ff>Load</font>
 
@@ -2013,3 +2013,7 @@ if (changes.elementsToRemove != null)
 ```
 
 <font color=#4db8ff>Code：</font>https://github.com/onlyyz/Custom/commit/a4042b5c10df948aa350d8fb49093ce11ed593ba
+
+#### 4.5 Exchange Data
+
+即：创建的数据类型与保存数据类型，进行数据交换，随后序列化保存
