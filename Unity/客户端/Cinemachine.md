@@ -12,7 +12,7 @@ public class MoveScript: MonoBehaviour
 }
 ```
 
-1.2 Body
+#### 1.2 Body
 
 ```c#
 CinemachineVirtualCamera cmvc = gameobject.AddComponent<CinemachineVirtualCamera>();
