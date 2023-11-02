@@ -2016,4 +2016,6 @@ if (changes.elementsToRemove != null)
 
 #### 4.5 Exchange Data
 
+<font color=#FFCE70>Log：28</font>
+
 即：创建的数据类型与保存数据类型，进行数据交换，随后序列化保存
