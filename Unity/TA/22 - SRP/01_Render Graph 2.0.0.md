@@ -2,6 +2,8 @@
 
 切换到Render Graph API。使用通行证分区工作。善用剖析
 
+<font color=#4db8ff>Link：</font>https://catlikecoding.com/unity/custom-srp/2-0-0/
+
 ![img](https://catlikecoding.com/unity/custom-srp/2-0-0/tutorial-image.jpg)
 
 <center>*The Particles scene demonstrates reading color and depth.*</center>

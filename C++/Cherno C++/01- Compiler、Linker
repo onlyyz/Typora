@@ -1,0 +1,435 @@
+C++ 编译生成 OBJ 中间文件，利用Link 链接器组装为 Exe文件
+
+即：将**CPP**文件编译为 <font color=#FD00FF>translation unit</font> 翻译单元 会生成一个 Obj 目标文件
+
+生成抽象语法树之后，就编译为代码
+
+
+
+link： https://www.youtube.com/watch?v=3tIqpEmWMLI&list=PLlrATfBNZ98dudnM48yfGUldqGD0S4FFb&index=6
+
+### 一、Compiler
+
+#### 1.1 预处理阶段
+
+编译第一阶段 “ 预处理阶段 ” ，编译器只会遍历所有的预处理语句，并对其进行评估，
+
+如：
+
+```c++
+include 
+if
+define
+pragma
+```
+
+他们将会告诉编译器到底要做什么
+
+#### 1.2 include
+
+指定要包含哪些文件，“  **预处理器** ” 打开文件，并且读取所有的内容，随后复制到“ **声明语句** ”的文件中
+
+EndBrace.h
+
+```c++
+}
+```
+
+Math.cpp
+
+```c++
+int Multiply(int a, int b)
+{
+	int result = a * b;
+	return result;
+	#include "EndBrace.h"
+```
+
+![image-20231111183542254](./assets/image-20231111183542254.png)
+
+
+
+可以将文件输出进行查看预处理
+
+![image-20231111183852149](./assets/image-20231111183852149.png)
+
+随后重新编译，便可以在文件中查看经过预处理结果的文件
+
+![image-20231111183913796](./assets/image-20231111183913796.png)
+
+查看预处理实际生成内容
+
+![image-20231111184019287](./assets/image-20231111184019287.png)
+
+#### 1.3 #define
+
+同样利用定义
+
+```c++
+#define INTEGER cherno
+
+INTEGER Multiply(int a, int b)
+{
+	INTEGER result = a * b;
+	return result;
+}
+```
+
+编译结果为
+
+![image-20231111184400266](./assets/image-20231111184400266.png)
+
+#### 1.4 #if
+
+<font color="red">if </font>预处理语句，可以让我们调用的东西根据给定的条件，包含或者排除代码
+
+```c++
+#if 1
+int Multiply(int a, int b)
+{
+    int result = a * b;
+    return result;
+}
+#endif
+```
+
+![image-20231111185136924](./assets/image-20231111185136924.png)
+
+```c++
+#if 0
+int Multiply(int a, int b)
+{
+    int result = a * b;
+    return result;
+}
+#endif
+```
+
+![image-20231111185204403](./assets/image-20231111185204403.png)
+
+可以看到条件不同，编译的结果也不同
+
+#### 1.5 #Include <>
+
+
+
+```c++
+#include <iostream>
+
+int Multiply(int a, int b)
+{
+    int result = a * b;
+    return result;
+}
+```
+
+![image-20231111191041982](./assets/image-20231111191041982.png)
+
+可以查看到编译结果
+
+#### 1.6 Obj
+
+查看Obj文件，可以法线，大部分都是二进制代码，因此我们可以修改输出改为我们看得懂的格式。
+
+![image-20231111214805847](./assets/image-20231111214805847.png)
+
+查看程序集
+
+![image-20231111215142835](./assets/image-20231111215142835.png)
+
+其中实际代码是将 a存在 eax 寄存器中，随后执行imul命令，然后将结果输出在 result中，将其输出
+
+所以有eax 输出到 result ，随后resulut 输出到 eax
+
+![image-20231111215422305](./assets/image-20231111215422305.png)
+
+优化代码
+
+```c++
+#include <iostream>
+
+int Multiply(int a, int b)
+{
+    return a * b;
+}
+
+```
+
+![image-20231111215744572](./assets/image-20231111215744572.png)
+
+可以看到实际上eax 寄存器发生了 imul 操作
+
+#### 1.7 优化代码
+
+在“ **Optimization ** ”处进行优化
+
+![image-20231111215938601](./assets/image-20231111215938601.png)
+
+重新编译，可以看到有“ **RTC** ”不兼容错误
+
+![image-20231111220041567](./assets/image-20231111220041567.png)
+
+返回code generation
+
+![image-20231111220230920](./assets/image-20231111220230920.png)
+
+这样编译时后执行运行时
+
+这只是帮助编译器将插入以帮助调试的代码
+
+![image-20231111220435253](./assets/image-20231111220435253.png)
+
+这个时候代码量会更少
+
+```c++
+int Multiply()
+{
+	return 5 * 2;
+}
+```
+
+![image-20231111220810584](./assets/image-20231111220810584.png)
+
+可以看到操作很简单，仅仅是将10 移动到寄存器上
+
+
+
+```c++
+const char* Log(const char* message)
+{
+	return message;
+}
+int Multiply(int a, int b)
+{
+	Log("Multiply")
+	return a * b;
+}
+```
+
+其中是将指针移到EAX，建立的返回寄存器中
+
+![image-20231111222047401](./assets/image-20231111222047401.png)
+
+可以看到@Multiply 中有 Call Log 的信息
+
+当我们有多个OBJ 文件时，并且我们的函数，定义在多个OBJ，由link 将它们链接在一起，随后执行，查找方式，就是利用函数签名
+
+可以使用优化返回值没有寄存的数据
+
+![image-20231111223607655](./assets/image-20231111223607655.png)
+
+### 二、Linking
+
+#### 2.1 链接阶段
+
+链接器需要获取编译期间生成的所有对象文件
+
+“ **link** ” 的重点是 发现每个符号和函数的位置，并且将他们链接在一起，记住每个文件作为翻译单位编译为单独的OBj文件
+
+主要目的是将编译的文件链接到一个程序中
+
+因此，在Link 阶段需要一个主函数入口
+
+![image-20231112215104186](./assets/image-20231112215104186.png)
+
+在链接器中，可以选择是否有入口
+
+![image-20231112215217002](./assets/image-20231112215217002.png)
+
+当函数不被调用时，链接器就不会去链接
+
+如果将函数在另一层函数中调用，并且注释上层函数调用，实际上链接器依然会链接
+
+```c++
+#include <iostream>
+
+void Log(const char* message);
+
+int Multiply(int a, int b)
+{
+	Log("Multiply");
+	return a * b;
+}
+
+int main() 
+{
+	//std::cout << Multiply(5, 8) << std::endl;
+	std::cin.get();
+	return 0;
+}
+```
+
+#### 2.2 Static
+
+如果在函数前增加 “ **Static** ” 当不被调用的时候，那么链接器只会链接当前文档的内容
+
+```c++
+#include <iostream>
+
+void Log(const char* message);
+
+static int Multiply(int a, int b)
+{
+	Log("Multiply");
+	return a * b;
+}
+
+int main() 
+{
+	//std::cout << Multiply(5, 8) << std::endl;
+	std::cin.get();
+	return 0;
+}
+```
+
+如果消除注释，则依然会有错误，因为启动了链接
+
+#### 2.3 .h
+
+当我们将代码迁徙
+
+Log.h
+
+```c++
+void Log(const char* message)
+{
+	std::cout << message << std::endl;
+}
+```
+
+Log.cpp
+
+```c++
+#include <iostream>
+
+void InitLog() {
+	Log("Initialized Log");
+}
+```
+
+这个时候选择编译，会显示找不到 “ **Log** ” 标识符错误，因此 我们可以包含头文件
+
+Log.cpp
+
+```c++
+#include <iostream>
+#include "Log.h"
+
+void InitLog() {
+	Log("Initialized Log");
+}
+```
+
+math.cpp
+
+```c++
+#include <iostream>
+#include "Log.h"
+
+static int Multiply(int a, int b)
+{
+	Log("Multiply");
+	return a * b;
+}
+
+int main() 
+{
+	std::cout << Multiply(5, 8) << std::endl;
+	std::cin.get();
+	return 0;
+}
+```
+
+选择编译，我们会发现，链接器会提示多种定义符号
+
+![image-20231112222103478](./assets/image-20231112222103478.png)
+
+这是因为 include 本质是将代码复制到当前的位置，因此两次 include会有定义错误
+
+解决方法是我们可以将方法标记为 “ **Static** ”
+
+Log.h
+
+```c++
+static void Log(const char* message)
+{
+	std::cout << message << std::endl;
+}
+```
+
+这意味着该函数发生的<font color=#4db8ff>链接 </font>，只会是内部的，并且他相对于其他<font color=#4db8ff>函数不可见</font>
+
+这个时候编译代码会发现所有的错误都已经消失
+
+#### 2.4 inline
+
+当然还有其他的方法，就是将<font color=#4db8ff>Static</font> 改为<font color=#4db8ff>Inline</font> 内联函数
+
+```c++
+inline void Log(const char* message)
+{
+	std::cout << message << std::endl;
+}
+```
+
+内联函数<font color=#4db8ff>line</font>，本质事项函数体Body 替换
+
+```c++
+#include <iostream>
+#include "Log.h"
+
+void InitLog() {
+	Log("Initialized Log");
+}
+
+void InitLog() { 
+	std::cout << "Initialized Log" << std::endl;
+}
+```
+
+#### 2.5 .h声明
+
+为了避免 <font color=#4db8ff>.h</font> 错误，可以将函数声明在 “ <font color=#4db8ff>.h</font> ”头文件中。而实际链接到的实际函数包含在翻译单元中
+
+.h
+
+```c++
+void Log(const char* message);
+```
+
+.cpp
+
+```c++
+#include <iostream>
+#include "Log.h"
+
+void InitLog() {
+	Log("Initialized Log");
+}
+
+void Log(const char* message)
+{
+	std::cout << message << std::endl;
+}
+```
+
+Main.cpp
+
+```c++
+#include <iostream>
+#include "Log.h"
+
+static int Multiply(int a, int b)
+{
+	Log("Multiply");
+	return a * b;
+}
+
+int main() 
+{
+	std::cout << Multiply(5, 8) << std::endl;
+	std::cin.get();
+	return 0;
+}
+```
+
