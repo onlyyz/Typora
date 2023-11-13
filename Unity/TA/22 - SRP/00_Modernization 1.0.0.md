@@ -2,6 +2,8 @@
 
 从 Unity 2019 升级到 2022 年。使项目现代化。引入一些修复。
 
+<font color=#4db8ff>Link：</font>https://catlikecoding.com/unity/custom-srp/1-0-0/
+
 ![img](https://catlikecoding.com/unity/custom-srp/1-0-0/tutorial-image.jpg)
 
 <center>FXAA 是该系列教程所涵盖的最后一项功能。</center>
