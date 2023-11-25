@@ -48,3 +48,38 @@ long long = 8byte = double
 #### 二、Debug in VS
 
 <font color=#4db8ff>link：</font>https://www.youtube.com/watch?v=0ebzPwixrJA&list=PLlrATfBNZ98dudnM48yfGUldqGD0S4FFb&index=11
+
+#### 2.1 Break Point
+
+```c++
+#include <iostream>
+#include "Log.h"
+
+int main() 
+{
+	Log("Hello World");
+	std::cin.get();
+}
+```
+
+![image-20231121221343676](./assets/image-20231121221343676.png)
+
+<font color=#4db8ff> F9 </font>断点
+
+![image-20231121222951493](./assets/image-20231121222951493.png)
+
+内存
+
+![image-20231121223333974](./assets/image-20231121223333974.png)
+
+查看内存位置
+
+初始内存为，意思是未初始化内存值，CC为十进制的 <font color=#4db8ff>204</font>,，16位，刚好对其四个bit。下面是八个十六进制，刚好是四个字节的内存
+
+```c++
+CC CC CC CC 
+```
+
+<font color=#4db8ff>Ctrl + Alt + W</font> 打开“监视”窗口
+
+<font color=#4db8ff>ctrl+ alt+ C</font>  调用堆栈

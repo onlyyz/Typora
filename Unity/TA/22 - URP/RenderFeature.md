@@ -1,66 +1,194 @@
+#### 一、Renderer Feature 
 
+```cs
+using UnityEngine;
+using UnityEngine.Rendering;
+using UnityEngine.Rendering.Universal;
 
-### 
+public class CustomRenderPassFeature : ScriptableRendererFeature { // 自定义的Feature
+    class CustomRenderPass : ScriptableRenderPass { // 自定义的Pass
+        public override void OnCameraSetup(CommandBuffer cmd, ref RenderingData renderingData) { // 渲染Pass前回调, 此处可以申请内存
+            Debug.Log("CustomRenderPass-OnCameraSetup");
+        }
 
-1、不透明纹理
+        public override void Execute(ScriptableRenderContext context, ref RenderingData renderingData) { // 渲染执行逻辑
+            Debug.Log("CustomRenderPass-Execute");
+        }
 
-#### 1.1 <font color="red">ConfigureInput </font>
+        public override void OnCameraCleanup(CommandBuffer cmd) { // 渲染Pass后回调, 此处可以清除内存操作
+            Debug.Log("CustomRenderPass-OnCameraCleanup");
+        }
+    }
 
-使用 ScriptableRenderPassInput.Color 参数调用 ConfigureInput 时
-确保渲染传递可以使用<font color=#4db8ff>不透明纹理</font>.
+    CustomRenderPass m_ScriptablePass; // 自定义的Pass
 
-#### 1.2 <font color=#FFCE70>ConfigureTarget</font>
+    public override void Create() { // 创建自定义的Pass
+        Debug.Log("CustomRenderPassFeature-Create");
+        m_ScriptablePass = new CustomRenderPass();
+        m_ScriptablePass.renderPassEvent = RenderPassEvent.AfterRenderingOpaques; // 渲染事件注入的时机
+    }
 
-配置本次渲染传递的渲染目标。调用此方法可替代 CommandBuffer.SetRenderTarget 方法。
-此方法应在 Configure.SetRenderTarget 中调用。
-
-
-
-
-
-1、Volume 添加组件
-
-2、getcomponent 获得组件参数
-
-3、RenderFeature
-
-作用是可以让我们扩展渲染的pass，官方的插件完全解耦，可以灵活的在渲染的各个阶段插入commandbuffer，这个插入点由RenderPassEvent决定。
-
-每个RenderFeature必须要继承ScriptableRendererFeature抽象类，并且实现AddRenderPasses跟Create函数。在ScriptableRendererFeature对象被初始化的时候，首先会调用Create方法，我们可以在这构建一个ScriptableRenderPass实例，然后在AddRenderPasses方法中对其进行初始化并把它添加到渲染队列中，这里大家或许已经明白，ScriptableRendererFeature对象跟ScriptableRenderPass对象需要搭配使用。创建好AdditionPostProcessRendererFeature，我们就可以在ForwardRenderer中添加新定义的RenderFeature了。
-
-#### 1、VolumeComponent
-
-```C#
-//add to the Volume componentMenu 
-[Serializable, VolumeComponentMenu("URP14/Test")]
-public class ClassName : VolumeComponent,IPostProcessComponent,IDispose
-{
-    	//set the parameters UI ：form VolumeParameter
-        public FloatParameter threshold = new ClampedFloatParameter(0.5f, 0.0f, 1.0f);
-        public FloatParameter softThreshold = new ClampedFloatParameter(0.5f, 0.0f, 1.0f);
-        public FloatParameter intensity = new ClampedFloatParameter(1.0f, 1.0f, 10.0f);
-        public ColorParameter colorTint = new ColorParameter(Color.white);
-        public FloatParameter blurRange = new ClampedFloatParameter(0f, 0f, 15f);
-        public IntParameter iteration = new ClampedIntParameter(4, 1, 8);
-        public FloatParameter downSample = new ClampedFloatParameter(1f, 1f, 10f);
+    public override void AddRenderPasses(ScriptableRenderer renderer, ref RenderingData renderingData) { // 将Pass添加到渲染队列中
+        Debug.Log("CustomRenderPassFeature-AddRenderPasses");
+        renderer.EnqueuePass(m_ScriptablePass);
+    }
 }
 ```
 
-1.1、IPostProcessComponent
 
-IsActive是为了告知是否需要渲染后期处理
 
-IsTileCompatible告知后期处理是否可以在平铺时运行特效，或者是否需要一次完全通过
+<img src="./assets/image-20231125222459460.png" alt="image-20231125222459460" style="zoom:50%;" />
 
-```c#
- /// Tells if the post process needs to be rendered or not.
-public bool IsActive()
-{
-    return active;
+Render Feature 的执行时序是：Create→AddRenderPasses→OnCameraSetup→Execute→OnCameraCleanup；
+
+Create 方法只在程序启动时执行几次，后面就不执行了；
+
+AddRenderPasses、OnCameraSetup、Execute、OnCameraCleanup 方法每帧都会执行一次。
+
+#### 1.1 URP 14 after
+
+```c++
+using UnityEngine.Rendering.Universal;
+using UnityEngine;
+
+public class FullscreenFeature : ScriptableRendererFeature {
+    public Settings settings = new Settings(); // 设置
+    FullscreenPass blitPass; // 后处理的Pass
+
+    public override void Create() { // 创建后处理Pass(自动回调)
+        blitPass = new FullscreenPass(name);
+    }
+
+    public override void AddRenderPasses(ScriptableRenderer renderer, ref RenderingData renderingData) { // 添加渲染Pass(自动回调)
+        if (settings.blitMaterial == null) {
+            return;
+        }
+        blitPass.renderPassEvent = settings.renderPassEvent;
+        blitPass.settings = settings;
+        renderer.EnqueuePass(blitPass);
+    }
+
+    [System.Serializable]
+    public class Settings { // 配置项
+        public RenderPassEvent renderPassEvent = RenderPassEvent.AfterRenderingOpaques;
+        public Material blitMaterial = null;
+    }
 }
-//Tells if the post process can run the effect on-tile or if it needs a full pass
-public bool IsTileCompatible()=> false;
 ```
 
-![image-20230809174142591](./../../assets/image-20230809174142591.png)
 
+
+```c++
+using UnityEngine.Rendering.Universal;
+using UnityEngine.Rendering;
+using UnityEngine;
+
+internal class FullscreenPass : ScriptableRenderPass {
+    public FullscreenFeature.Settings settings; // 配置项
+    private string profilerTag; // 分析器标签, 在Frame Debugger中可以看到该标签
+    private RenderTargetIdentifier source; // 源缓存标识
+    private RenderTargetIdentifier destination; // 目标缓存标识
+    private int destinationId; // 目标缓存id
+    private FilterMode filterMode; // 纹理采样滤波模式, 取值有: Point、Bilinear、Trilinear
+
+    public FullscreenPass(string tag) {
+        profilerTag = tag;
+        destinationId = Shader.PropertyToID("_TempRT");
+    }
+
+    public override void OnCameraSetup(CommandBuffer cmd, ref RenderingData renderingData) { // 渲染前回调
+        RenderTextureDescriptor blitTargetDescriptor = renderingData.cameraData.cameraTargetDescriptor;
+        blitTargetDescriptor.depthBufferBits = 0;
+        ScriptableRenderer renderer = renderingData.cameraData.renderer;
+        source = renderer.cameraColorTarget;
+        cmd.GetTemporaryRT(destinationId, blitTargetDescriptor, filterMode);
+        destination = new RenderTargetIdentifier(destinationId);
+    }
+
+    public override void Execute(ScriptableRenderContext context, ref RenderingData renderingData) { // 执行渲染
+        CommandBuffer cmd = CommandBufferPool.Get(profilerTag);
+        Blit(cmd, source, destination, settings.blitMaterial);
+        Blit(cmd, destination, source);
+        context.ExecuteCommandBuffer(cmd);
+        CommandBufferPool.Release(cmd);
+    }
+
+    public override void FrameCleanup(CommandBuffer cmd) { // 渲染后回调
+        if (destinationId != -1) {
+            cmd.ReleaseTemporaryRT(destinationId);
+        }
+    }
+}
+```
+
+#### 1.2 动态获取 Feature
+
+在 MonoBehaviour 中获取 Renderer Feature，可以通过以下代码片段获取
+
+```c++
+private FullscreenFeature GetFeature(string name) { // 获取feature
+    UniversalRendererData rendererData = Resources.Load<UniversalRendererData>("Full Universal Renderer Data");
+    if (rendererData != null && !string.IsNullOrEmpty(name)) {
+        List<FullscreenFeature> features = rendererData.rendererFeatures.OfType<FullscreenFeature>().ToList();
+        foreach (FullscreenFeature feature in features) {
+            if (name.Equals(feature.name)) {
+                return feature;
+            }
+        }
+    }
+    return null;
+}
+```
+
+通过以下工具类获取 Renderer Feature。URPFeatureUtils.cs
+
+```c++
+using UnityEngine.Rendering.Universal;
+using UnityEngine.Rendering;
+using System.Reflection;
+
+public class URPFeatureUtils {
+    private static URPFeatureUtils instance; // 单例
+    private UniversalRendererData rendererData; // 渲染数据, 存储了feature列表
+
+    private URPFeatureUtils() {
+        rendererData = GetRendererData();
+    }
+
+    public static T GetFeature<T>(string name) where T : ScriptableRendererFeature { // 获取feature
+        if (instance == null) {
+            instance = new URPFeatureUtils();
+        }
+        if (instance.rendererData != null) {
+            return GetFeature<T>(instance.rendererData, name);
+        }
+        return null;
+    }
+
+    private static T GetFeature<T>(UniversalRendererData rendererData, string name) where T : ScriptableRendererFeature { // 获取feature
+        if (rendererData != null && !string.IsNullOrEmpty(name)) {
+            foreach (ScriptableRendererFeature feature in rendererData.rendererFeatures) {
+                if (feature is T && name.Equals(feature.name)) {
+                    return (feature as T);
+                }
+            }
+        }
+        return null;
+    }
+
+    private UniversalRendererData GetRendererData() { // 通过反射获取渲染数据, 也可以通过Resources.Load加载, 但是需要将UniversalRendererData文件放在Resources目录下
+        UniversalRenderPipelineAsset urpAsset = GraphicsSettings.renderPipelineAsset as UniversalRenderPipelineAsset;
+        FieldInfo propertyInfo = urpAsset.GetType().GetField("m_RendererDataList", BindingFlags.Instance | BindingFlags.NonPublic);
+        ScriptableRendererData[] rendererDatas = (ScriptableRendererData[])propertyInfo.GetValue(urpAsset);
+        if (rendererDatas != null && rendererDatas.Length > 0 && (rendererDatas[0] is UniversalRendererData)) {
+            return rendererDatas[0] as UniversalRendererData;
+        }
+        return null;
+    }
+}
+```
+
+说明：之所以要使用反射，因为 UniversalRenderPipelineAsset 中的 m_RendererDataList 属性不是 public 的，并且没有给外界提供获取 m_RendererDataList 的接口。
+
+
+链接：https://www.jianshu.com/p/5b03e596ddee
