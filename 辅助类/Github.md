@@ -244,3 +244,6 @@ git reset --hard HEAD
 git checkout source_branch <path>...
 ```
 
+#### 忽略
+
+https://www.freecodecamp.org/chinese/news/gitignore-file-how-to-ignore-files-and-folders-in-git/
