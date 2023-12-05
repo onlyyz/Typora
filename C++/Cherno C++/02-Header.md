@@ -118,7 +118,7 @@ break 打断循环
 
 return
 
-#### 六、指针
+#### 六、Ponter
 
 指针存储内存位置 ，<font color=#4db8ff> &   </font>询问变量内存位置
 
@@ -179,3 +179,78 @@ int main()
 该内存指向指针的位置，即数值的位置
 
 <font color=#4db8ff>Link： </font>https://www.youtube.com/watch?v=DTxHyVn0ODg&list=PLlrATfBNZ98dudnM48yfGUldqGD0S4FFb&index=16
+
+
+
+#### 七、References
+
+<font color=#4db8ff>Link： </font>https://www.youtube.com/watch?v=IzoFn3dfsPA&list=PLlrATfBNZ98dudnM48yfGUldqGD0S4FFb&index=17
+
+其中<font color=#4db8ff> int& </font>是一个类型，他不是一个地址
+
+```c++
+#include <iostream>
+#define Log(x) std::cout<<x<<std::endl;
+
+int main()
+{
+	int a = 5;
+	int& ref = a;
+	std::cin.get();
+}
+```
+
+引用实际上是一种别名，但是他保存的数据与指针相同，都是地址
+
+按值传递，只会复制值，而不是抓取指针地址
+
+```c++
+#include <iostream>
+#define Log(x) std::cout<<x<<std::endl;
+
+void Increment(int value) {
+	value++;
+}
+
+int main()
+{
+	int a = 5;
+	Increment(a);
+	Log(a);
+	std::cin.get();
+}
+```
+
+按指针传递，可以实际修改值
+
+```c++
+void Increment(int* value) {
+	(*value)++;
+}
+
+int main()
+{
+	int a = 5;
+	Increment(&a);
+	Log(a);
+	std::cin.get();
+}
+```
+
+引用传递
+
+```c++
+void Increment(int& value) {
+	value++;
+}
+
+int main()
+{
+	int a = 5;
+	Increment(a);
+	Log(a);
+	std::cin.get();
+}
+```
+
+引用的多次分配，后续为赋值，
