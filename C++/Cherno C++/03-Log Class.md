@@ -61,7 +61,7 @@ static int s_Variable = 5;
 
 如果将静态变量头文件包含在其他文件中，则对文件可见
 
-#### 一、Log Level
+#### 二、Log Level
 
 log level分为三层，<font color=#4db8ff> Warning、Error、Trace(Message) </font>
 
@@ -114,3 +114,120 @@ int main()
 
 ```
 
+#### 三、Static
+
+<font color=#4db8ff>Link：</font>https://www.youtube.com/watch?v=V-BFlMrBtqQ&list=PLlrATfBNZ98dudnM48yfGUldqGD0S4FFb&index=22
+
+##### 3.1 Class Struct
+
+Class内静态意味着，Class所有实例中存在唯一实例
+
+```c++
+struct Entity
+{
+	static int x, y;
+    void Print()
+	{
+		std::cout << x << ", " << y << std::endl;
+	}
+};
+
+int main()
+{
+	Entity e;
+	e.x = 2;
+	e.y = 3;
+	Entity e1;
+    e1.x = 5;
+	e1.y = 8;
+}
+```
+
+![image-20231214235747110](./assets/image-20231214235747110.png)
+
+此时会出现错误，因为我们必须在一些位置上定义这些静态变量
+
+```c++
+int Entity::x;
+int Entity::y;
+int main()
+{}
+```
+
+他们被定义为链接，因为将X和Y设置为静态变量以后，所有的实体类的所有实例中X和Y只存在一个实例。意味着当我修改其中一个实例的时候，所有实例都会被修改，因为他们本质是相同的
+
+<font color=#4db8ff> 指向相同内存的两个不同的实例，但是x y 是否事项共享，指向相同的x y </font>
+
+因此，下列代码并无意义
+
+```c++
+e1.x = 5;
+e1.y = 8;
+```
+
+可以引用他们，就像创建了两个变量，基本只存在于命名空间
+
+```c++
+Entity::x = 5;
+Entity::y = 8;
+```
+
+跨类拥有变量时，很有用，如果将方法改为静态也可以调用
+
+```c++
+static  void Print()
+{
+    std::cout << x << ", " << y << std::endl;
+}
+...
+
+Entity::Print();
+Entity::Print();
+```
+
+如果x y 不是静态的，那么函数将会在这里中断，因为静态函数不能访问非静态变量
+
+原因是：<font color=#4db8ff>静态方法没有类实例，因为在类中每个非静态函数，都会获取一个实例，当前的类作为函数，这也是类的幕后实际工作方式</font>
+
+不存在类之类的东西，他们是带有隐藏参数的函数，但是静态方法无法获得隐藏参数
+
+![image-20231215004339172](./assets/image-20231215004339172.png)
+
+```c++
+struct Entity
+{
+	int x, y;
+		
+	static  void Print()
+	{
+		std::cout << x << ", " << y << std::endl;
+	}
+};
+
+static void Print(Entity e)
+{
+	std::cout << e.x << ", " << e.y << std::endl;
+}
+
+
+int main()
+{
+	Entity e;
+	e.x = 2;
+	e.y = 3;
+	Entity e1;
+	Entity::x = 5;
+	Entity::y = 8;
+
+	Entity::Print();
+	Entity::Print();
+}
+```
+
+但是这样修改就可以继续工作，本质是一个非类方法
+
+如果去掉 “ Entity ” 则会出现错误，因为没有给予一个实体的引用，程序不知道，要访问实例的 x y 是那个
+
+##### 3.2 Enums
+
+<font color=#4db8ff>Link：</font>https://www.youtube.com/watch?v=x55jfOd5PEE&list=PLlrATfBNZ98dudnM48yfGUldqGD0S4FFb&index=23
