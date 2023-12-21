@@ -2,6 +2,8 @@
 
 <font color=#4db8ff>Link： </font>https://www.youtube.com/watch?v=jQgwEsJISy0&t=19s
 
+<font color=#4db8ff>Link： </font>https://www.bilibili.com/video/BV1Pr4y1f7rv/?spm_id_from=333.337.search-card.all.click&vd_source=fc3995fc21714a345f57a951f8232fb7
+
 ### 一、 委托和事件
 
 事件可以充当通信机制
@@ -78,7 +80,7 @@ namespace EventandDelegates
             var MailService = new MailService();        //订阅
             var MassageService = new MassageService();        //订阅
 
-            //只想方法的指针列表
+            //像方法的指针列表
             videoEncoder.VideoEncoded += MailService.OnVideoEncoded;
             videoEncoder.VideoEncoded += MassageService.OnVideoEncoded;
             //调用前订阅
