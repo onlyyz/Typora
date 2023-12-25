@@ -231,3 +231,137 @@ int main()
 ##### 3.2 Enums
 
 <font color=#4db8ff>Link：</font>https://www.youtube.com/watch?v=x55jfOd5PEE&list=PLlrATfBNZ98dudnM48yfGUldqGD0S4FFb&index=23
+
+指定枚举类型
+
+```C++
+enum Example :unsigned char
+{
+	A,B,C
+};
+
+int main()
+{
+}
+```
+
+无法分配为 <font color=#4db8ff> float</font > 因为要求其为整数
+
+![image-20231219215001471](./assets/image-20231219215001471.png)
+
+```cpp
+#include <iostream>
+#define Log(x) std::cout<<x<<std::endl;
+
+class Log
+{
+public:
+	enum Level
+	{
+		Error = 0, Warning, Info
+	};
+
+private:
+	Level m_LogLevel = Info;
+
+public:
+	void SetLevel(Level Level)
+	{
+		m_LogLevel = Level;
+	}
+	void Error(const char* message)
+	{
+		if (m_LogLevel >= Error)
+			std::cout << "[Error]: " << message << std::endl;
+	}
+	void Warn(const char* message)
+	{
+		if (m_LogLevel >= Warning)
+			std::cout << "[WARNING]: " << message << std::endl;
+	}
+	void Info(const char* message)
+	{
+		if (m_LogLevel >= Info)
+			std::cout << "[INFO]: " << message << std::endl;
+	}
+};
+
+int main()
+{
+	Log log;
+	std::cin.get();
+}
+```
+
+此时会有同名函数错误
+
+```c++
+int main()
+{
+	Log log;
+	log.Error("Error");
+	log.Warn("Warn");
+	log.Info("Info");
+	std::cin.get();
+}
+```
+
+#### 四、Construction
+
+构造函数每次创建一个实例时都会调用这个函数
+
+其中默认构造函数不执行任何操作，可以隐藏默认构造函数即将其设置为<font color=#4db8ff> private</font > 或者设置为 <font color=#4db8ff> Delete</font > 
+
+```c++
+public: ClassName() = Delete;
+```
+
+#### 五、Desstruction
+
+析构函数
+
+```c++
+~ClassName(){}
+```
+
+#### 六、Inheritance
+
+单一类型多种形态即继承
+
+#### 七、Virtual Function
+
+##### 7.1 虚函数
+
+子类可以覆盖父类方法，函数需要利用关键字 " <font color=#4db8ff>Virtual</font> " 
+
+```c++
+Chirld* s = new Chirld();
+Parent* p = s;
+std::cout<<p ->Debug() <<std::endl;
+```
+
+此时调用的函数时父类函数，而非子类覆盖的函数
+
+<font color=#4db8ff> Virtual </font> 减少了 <font color=#4db8ff>Dynamic dispatch （动态调度）</font>的东西，实现由V表实现，<font color=#4db8ff>V表</font>是包含所有虚函数映射的表，以便运行时可以正确映射到覆盖的函数上
+
+如果想覆盖函数，必须将基本函数标记为虚函数，也利用关键字 <font color=#4db8ff>Override</font>，标记重写，但是它只是帮助提示作用
+
+##### 7.2 纯虚函数
+
+<font color=#4db8ff>Pure Virtual Function 纯虚函数</font>
+
+即父类声明，强制子类定义的函数，即父类仅包含为实现的函数方法
+
+C++通过使用纯虚函数（pure virtual function） 提供未实现的函数。纯虚函数声明的结尾处为=0。
+
+```Cpp
+virtual double Area() const = 0; // a pure virtual function
+```
+
+<font color="red">当类声明中包含<font color="blue">纯虚函数</font>时，则不能创建该类的对象</font>
+
+这里的理念是，包含纯虚函数的类只用作基类。要成为真正的ABC（抽象基类），必须至少包含一个纯虚函数。原型中的=0使虚函数成为纯虚函数。
+
+##### 7.3 Visibility
+
+<font color=#4db8ff>Protected</font>，仅自身与子类可见
