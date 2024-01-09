@@ -1,4 +1,4 @@
-<font color=#4db8ff>Link：</font>https://www.youtube.com/watch?v=3dHBFBw13E0&list=PLlrATfBNZ98dudnM48yfGUldqGD0S4FFb&index=24
+<font color=#4db8ff> Link：</font>https://www.youtube.com/watch?v=3dHBFBw13E0&list=PLlrATfBNZ98dudnM48yfGUldqGD0S4FFb&index=24
 
 #### 一、Static 
 
@@ -365,3 +365,105 @@ virtual double Area() const = 0; // a pure virtual function
 ##### 7.3 Visibility
 
 <font color=#4db8ff>Protected</font>，仅自身与子类可见
+
+#### 八、Array
+
+##### 8.1 Array Point
+
+数组名称是其内存位置，本质也是一种<font color=#4db8ff>整数指针</font>
+
+```c++
+int example[5]; 
+std::cout<<example<<tsd::endl;
+```
+
+数值偏移可以使用指针偏移，八个字节的偏移
+
+```c++
+example[5] = 5；
+    *(ptr + 2) = 6;
+```
+
+##### 8.1 Array Life
+
+两者生命周期不同，因为指针是堆栈中创建，当离开  <font color=#4db8ff>}</font> 就会被销毁，但是堆依然存在
+
+```c++
+int main()
+{
+	int example[5]; 
+	int* another = new int[5];   
+    delete[] another;
+}
+```
+
+new分配内存它会一直存在，直到删除它
+
+```c++
+int* another = new int[5];   
+delete[] another;
+```
+
+而<font color=#4db8ff>another</font>是存储着另一个内存的位置，另一个内存才会实际存储数组信息
+
+```c++
+int* another = new int[5];   
+```
+
+#### 九、String
+
+<font color=#4db8ff>Link：</font>https://www.youtube.com/watch?v=ijIxcB9qjaU&list=PLlrATfBNZ98dudnM48yfGUldqGD0S4FFb&index=31
+
+字符串的内存通常是固定的，如果需要全新的分配，则需要删除就的字符串
+
+```c++
+char* name = "Cherno";
+```
+
+其中字符串结尾是空终止字符在内存中的显示是 <font color=#4db8ff>"00"</font>
+
+string可以接受一个子指针
+
+```c++
+#include <iostream>
+#include <string>
+
+int main()
+{	
+	std::string name = "cherno";
+	std::cout << name << std::endl;
+
+	std::cin.get();
+}
+```
+
+提示只读，引用不会被复制，承诺不会被修改
+
+```c++
+void PrintString(const std::string& string)
+{
+	std::cout << string << std::endl;
+}
+```
+
+<font color=#4db8ff>String 资料：</font>https://cplusplus.com/reference/string/string/
+
+其中指针只读，而如果需要修改则需要改为数组
+
+```c++
+char* name  = "Kotono";
+char name[]  = "Kotono";
+```
+
+字符串无法直接用<font color=#4db8ff> ' + '</font>连接，可以使用运算函数符
+
+```c++
+using namespace std::string_literals;
+std::string name0 = "cherno"s + "hello";
+```
+
+![image-20240109232022444](./assets/image-20240109232022444.png)
+
+#### 十、Const
+
+<font color=#4db8ff>Link：</font>https://www.youtube.com/watch?v=4fJBrditnJU&list=PLlrATfBNZ98dudnM48yfGUldqGD0S4FFb&index=33
