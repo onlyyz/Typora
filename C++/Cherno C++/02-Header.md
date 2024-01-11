@@ -118,9 +118,11 @@ break 打断循环
 
 return
 
-#### 六、Ponter
+#### 六、Pointer
 
 指针存储内存位置 ，<font color=#4db8ff> &   </font>询问变量内存位置
+
+<font color="RoyalBlue">假设 `manly` 是一个指针，则 `manly` 表示的是一个地址，<font color="red">`*manly` 表示存储在该地址处的值</font></font>，即 `*manly` 和常规变量等效。
 
 ```c++
 #include <iostream>

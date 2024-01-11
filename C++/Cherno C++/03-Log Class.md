@@ -467,3 +467,97 @@ std::string name0 = "cherno"s + "hello";
 #### 十、Const
 
 <font color=#4db8ff>Link：</font>https://www.youtube.com/watch?v=4fJBrditnJU&list=PLlrATfBNZ98dudnM48yfGUldqGD0S4FFb&index=33
+
+const 是一个常量，本质是设定变量不变，默认为只读、
+
+##### 10.1 值不变
+
+const  值  地址
+
+此時会显示值不可更改，因为<font color=#4db8ff>const</font> 修饰的是 <font color=#4db8ff>int* </font>，即指针值。
+
+```c++
+const int* a = new int;
+*a = 2;
+```
+
+![image-20240111221411146](./assets/image-20240111221411146.png)
+
+相同写法有 类型 const 值 地址
+
+在指针符号 <font color=#4db8ff> * </font>之前
+
+```c++
+int const* a = new int;
+*a = 2;
+```
+
+![image-20240111222039943](./assets/image-20240111222039943.png)
+
+
+
+##### 10.2 值 const  地址
+
+```c++
+int* const a = new int;
+*a = 2;
+a = (int*)&MAX_AGE;
+```
+
+![image-20240111221553610](./assets/image-20240111221553610.png)
+
+此時会显示值不可更改，因为<font color=#4db8ff>const</font> 修饰的是 <font color=#4db8ff>a </font>，即指针地址，无法指向其他内容
+
+##### 10.3 函数const
+
+```c++
+class Entity
+{
+private:
+	int m_X;
+public:
+	int GetX() const
+	{
+		m_X = 2;
+		return m_X;
+	}
+};
+```
+
+![image-20240112003345278](./assets/image-20240112003345278.png)
+
+此时会变成只读方法
+
+```c++
+private:
+	int* m_X;
+public:
+	const int* const GetX() const
+	{
+		return m_X;
+	}
+};
+```
+
+返回一个无法修改的指针，并且指针的内容只读
+
+##### 10.4 mutable
+
+在const 中 mutable 可变
+
+```c++
+
+class Entity
+{
+private:
+	int* m_X;
+	mutable  int var;
+public:
+	const int* const GetX() const
+	{
+		var = 2;
+		return m_X;
+	}
+};
+```
+
