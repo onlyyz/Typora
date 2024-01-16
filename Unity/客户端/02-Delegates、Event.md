@@ -8,7 +8,7 @@
 
 事件可以充当通信机制
 
-#### 1.1 Title
+##### 1.1 Title
 
 ```c#
 namespace EventandDelegates
@@ -20,7 +20,7 @@ namespace EventandDelegates
 }
 ```
 
-#### 1.2 EventandDelegates
+##### 1.2 EventandDelegates
 
 ```c#
 using System;
@@ -64,7 +64,7 @@ namespace EventandDelegates
 }
 ```
 
-#### 1.3 Program
+##### 1.3 Program
 
 ```c#
 using System;
@@ -132,7 +132,7 @@ public event EventHandler VideoEncoded;
 
 
 
-### for example
+##### for example
 
 ```C#
 using UnityEngine;
@@ -164,3 +164,85 @@ public class GameObjectFilter : MonoBehaviour
     }
 }
 ```
+
+##### 1.4 Delegate
+
+<font color=#4db8ff>Link：</font>https://www.youtube.com/watch?v=J01z1F-du-E
+
+委托可以从类外部设置，调用委托
+
+需要声明委托类型，随后创建委托实例
+
+```C#
+//1 - 决定了订阅的形式
+public delegate void TriggerEncodeEventHandler(object source, TriggerEventArgs args);
+//2 - 创建事件
+public TriggerEncodeEventHandler TriggerEncoded;
+```
+
+##### 1.5 Event
+
+事件只可以从类内部设置，调用委托
+
+```C#
+//1 - 决定了订阅的形式
+public delegate void TriggerEncodeEventHandler(object source, TriggerEventArgs args);
+//2 - 创建事件
+public event TriggerEncodeEventHandler TriggerEncoded;
+```
+
+### 二、Action、UnityEvent
+
+<font color=#4db8ff>Link：</font>https://www.youtube.com/watch?v=8fcI8W9NBEo
+
+Action是现成的无参委托
+
+#### 2.1 Action
+
+```c#
+public static event Action OnUnVariable;
+public static event Action<float> OnVariable;
+
+OnVariable?.Invoke(float);
+```
+
+
+
+#### 2.2 UnityEvent
+
+UnityEvent 并不需要判断是否为空
+
+```c#
+public UnityEvent OnUnityEvent;
+	OnUnityEvent.Invoke();
+```
+
+
+
+
+
+ UnityEvent才是我们游戏中更加常用的事件类型，从功能上来说，UnityEvent和C#的事件（Event）有一些相似之处，首先它也允许你定义自己的事件，并将其绑定到特定的方法或函数，就像使用Event那样去使用。
+
+```c#
+public class Test : MonoBehaviour
+{
+    // 定义一个 Unity Event
+    public UnityEvent onClickEvent;
+
+    private void Start()
+    {
+        // 获取按钮组件
+        Button button = GetComponent<Button>();
+
+        // 绑定点击事件
+        button.onClick.AddListener(OnButtonClick);
+    }
+
+    private void OnButtonClick()
+    {
+        // 触发 Unity Event，执行绑定的方法
+        onClickEvent.Invoke();
+    }
+}
+```
+
