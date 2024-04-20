@@ -2,10 +2,21 @@
 
 #### 1、属性
 
-```CPP
 //解决方案\bin\win32 or 64...\调试
-Output Directory	$(SolutionDir)\bin\$(Platform)\$(Configuration)
-Intermediate Directory	$(SolutionDir)\bin\intermediates\$(Platform)\$(Configuration)
+Output Directory	
+
+```c++
+$(SolutionDir)\bin\$(Platform)\$(Configuration)
+
+$(SolutionDir)$(Configuration)\
+```
+
+Intermediate Directory		
+
+```c++
+$(SolutionDir)\bin\intermediates\$(Platform)\$(Configuration)
+
+$(Configuration)\
 ```
 
 ![image-20230715124844116](./assets/image-20230715124844116.png)
@@ -14,7 +25,7 @@ Intermediate Directory	$(SolutionDir)\bin\intermediates\$(Platform)\$(Configurat
 
 ```C++
 GLFW			$(SolutionDir)Dependencies\GLFW\include
-LINK    			$(SolutionDir)Dependencies\GLFW\lib-vc2022
+LINK    		$(SolutionDir)Dependencies\GLFW\lib-vc2022
 ```
 
 ![image-20230715224203232](./assets/image-20230715224203232.png)
