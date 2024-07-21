@@ -1443,7 +1443,7 @@ private void AddToolbar()
 
 ![image-20231016112451679](assets/image-20231016112451679.png)
 
-### 四、 
+### 四、Save Data
 
 #### 4.1 Element Name
 
@@ -1913,7 +1913,7 @@ public override void Draw()
 
 #### 4.4 ID use
 
-但是此时我们的<font color=#FFCE70>POrt</font>链接时，ID没有更新，因此，我们需要将ID的修改加入函数中利用一个新的回调函数
+但是此时我们的<font color=#FFCE70>Port</font>链接时，ID没有更新，因此，我们需要将ID的修改加入函数中利用一个新的回调函数
 
 <font color="red">**GraphView.GraphView.graphViewChanged**</font>
 

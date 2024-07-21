@@ -294,3 +294,110 @@ python "%WWISEROOT%/Scripts/Build/Plugins/wp.py" build Documentation
 ![image-20240716002304555](./assets/image-20240716002304555.png)
 测试
 
+#### 四、代码接口
+
+<font color=#4db8ff>Link：</font>https://www.audiokinetic.com/zh/library/edge/?source=SDK&id=wwiseplugin_backend.html
+
+##### 4.1 sound Bank
+
+```c++
+#include <AK/Wwise/Plugin.h>
+ 
+class BackendSourcePlugin
+:   public AK::Wwise::Plugin::AudioPlugin
+,   public AK::Wwise::Plugin::Source
+{
+public:
+    // AK::Wwise::Plugin::AudioPlugin
+    bool GetBankParameters(
+        const GUID& in_guidPlatform,
+        AK::Wwise::Plugin::DataWriter& in_dataWriter
+    ) const override;
+ 
+    // AK::Wwise::Plugin::Source
+    bool GetSourceDuration(
+        double& out_dblMinDuration,
+        double& out_dblMaxDuration
+    ) const override;
+};
+ 
+AK_ADD_PLUGIN_CLASS_TO_CONTAINER(
+    MyPlugin,               // Add to container "MyPlugin"
+    BackendSourcePlugin,    // Class to add to the container
+    SoundEngineSourcePlugin // Sound engine plug-in to which this plug-in corresponds
+);
+```
+
+将其当前设置存储到声音包中。 可以通过实现<font color=#4db8ff>AK::Wwise::Plugin::AudioPlugin::GetBankParameters() </font>方法来做到。获取每个属性的当前值，然后使用适当方法将值写入，<font color=#4db8ff>AK::Wwise::Plugin::DataWriter</font>对象作为接收的参数。这些操作按照参数结构中各成员的定义顺序执行
+
+```c++
+bool MySourcePlugin::GetBankParameters(
+    const GUID& in_guidPlatform,
+    AK::Wwise::Plugin::DataWriter& in_dataWriter) const
+{
+    bool result = true;
+    result &= in_dataWriter.WriteReal32(m_propertySet->GetReal32(in_guidPlatform, "Frequency"));
+    result &= in_dataWriter.WriteReal32(m_propertySet->GetReal32(in_guidPlatform, "Gain"));
+    result &= in_dataWriter.WriteReal32(m_propertySet->GetReal32(in_guidPlatform, "Duration"));
+    return result;
+}
+```
+
+##### 4.2 Front end
+
+<font color=#4db8ff>Link：</font>https://www.audiokinetic.com/zh/library/edge/?source=SDK&id=wwiseplugin_frontend.html
+
+工具集的方法，以便实现图形用户界面。 您需要创建通过前端类（如 <font color=#4db8ff>AK::Wwise::Plugin::GUIWindows</font>）获取的类。
+
+```c++
+#include <AK/Wwise/Plugin.h>
+ 
+class FrontendSourcePlugin
+:   public AK::Wwise::Plugin::GUIWindows
+{
+public:
+    FrontendSourcePlugin();
+ 
+    // AK::Wwise::Plugin::GUIWindows
+    HINSTANCE GetResourceHandle() const override;
+ 
+    bool GetDialog(
+        AK::Wwise::Plugin::eDialog in_eDialog,
+        UINT& out_uiDialogID,
+        AK::Wwise::Plugin::PopulateTableItem*& out_pTable
+    ) const override;
+ 
+    bool WindowProc(
+        AK::Wwise::Plugin::eDialog in_eDialog,
+        HWND in_hWnd,
+        uint32_t in_message,
+        WPARAM in_wParam,
+        LPARAM in_lParam,
+        LRESULT& out_lResult
+    ) override;
+ 
+    bool Help(HWND in_hWnd, eDialog in_eDialog) const override;
+};
+ 
+AK_ADD_PLUGIN_CLASS_TO_CONTAINER(
+    MyPlugin,               // Add to container "MyPlugin"
+    FrontendSourcePlugin,   // Class to add to the container
+    SoundEngineSourcePlugin // Sound engine plug-in to which this plug-in corresponds
+);
+```
+
+##### 4.3 control Link
+
+```c++
+constexpr auto propertyKey = u8"MyProperty";
+ 
+AK_WWISE_PLUGIN_GUI_WINDOWS_BEGIN_POPULATE_TABLE(PropertyTable)
+    AK_WWISE_PLUGIN_GUI_WINDOWS_POP_ITEM(IDC_MYPROPERTY_EDIT, propertyKey)
+AK_WWISE_PLUGIN_GUI_WINDOWS_END_POPULATE_TABLE()
+```
+
+将控件 <font color=#4db8ff>IDC_MYPROPERTY_EDIT</font>（来自与 .rc 文件配套的 resource.h 文件）映射到了属性 MyProperty。该 ID 必须与插件 XML 定义中的属性对应。
+
+#### 五、XML
+
+<font color=#4db8ff>Link：</font>https://www.audiokinetic.com/zh/library/edge/?source=SDK&id=plugin_xml.html
